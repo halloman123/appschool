@@ -1,0 +1,11 @@
+# Oude Node/Express-server - niet meer gebruikt, app is nu statisch
+_oud/
+node_modules/
+
+# Opdracht- en referentiebestanden - niet meepubliceren
+Rubric.html.zip
+ontwerp/Magic_the_gathering-card_back.jpg
+
+# Systeembestanden
+.DS_Store
+Thumbs.db

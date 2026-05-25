@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grof ontwerp – Magic Meeting</title>
+<style>
+  :root {
+    --inkt:      #1a1410;
+    --perkament: #f4ead6;
+    --perkament-licht: #fbf5e6;
+    --goud:      #b8923d;
+    --goud-donker: #8a6d2c;
+    --rand:      #d8c89e;
+    --tekst:     #2a2018;
+    --tekst-zacht: #6b5d48;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #2a2018;
+    color: var(--tekst);
+    line-height: 1.65;
+    padding: 32px 16px;
+  }
+  .blad {
+    max-width: 880px;
+    margin: 0 auto;
+    background: var(--perkament);
+    border: 3px solid var(--inkt);
+    border-radius: 14px;
+    box-shadow: 0 0 0 6px var(--goud-donker), 0 14px 40px rgba(0,0,0,.5);
+    overflow: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, #1a1410 0%, #3a2c1c 100%);
+    color: var(--perkament);
+    padding: 36px 40px;
+    border-bottom: 3px solid var(--goud);
+  }
+  header .label {
+    display: inline-block;
+    background: var(--goud);
+    color: var(--inkt);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+  header h1 { font-size: 2rem; font-weight: 800; }
+  header p { opacity: .8; margin-top: 6px; font-size: .95rem; }
+  .inhoud { padding: 36px 40px 48px; }
+  h2 {
+    font-size: 1.15rem;
+    color: var(--goud-donker);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 38px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--rand);
+  }
+  h2:first-of-type { margin-top: 0; }
+  h3 { font-size: 1rem; color: var(--inkt); margin: 18px 0 6px; }
+  p, li { font-size: .94rem; }
+  ul { margin: 6px 0 6px 22px; }
+  li { margin-bottom: 3px; }
+  .intro { font-size: .98rem; color: var(--tekst-zacht); }
+
+  /* Sitemap */
+  .sitemap { margin: 18px 0; text-align: center; }
+  .knoop {
+    display: inline-block;
+    background: var(--inkt);
+    color: var(--perkament);
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: 2px solid var(--goud);
+  }
+  .tak { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+  .verbinding { width: 2px; height: 22px; background: var(--goud-donker); margin: 0 auto; }
+  .scherm {
+    background: var(--perkament-licht);
+    border: 2px solid var(--goud-donker);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: .9rem;
+    min-width: 130px;
+  }
+  .scherm small { display: block; font-weight: 400; color: var(--tekst-zacht); font-size: .78rem; }
+
+  /* Tabel */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .88rem; }
+  th, td { border: 1px solid var(--rand); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--inkt); color: var(--perkament); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+  tr:nth-child(even) td { background: var(--perkament-licht); }
+  code {
+    background: #e7dcc0;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: .85em;
+  }
+  pre {
+    background: var(--inkt);
+    color: #e8dcc0;
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .82rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  .scherm-kaart {
+    background: var(--perkament-licht);
+    border: 1px solid var(--rand);
+    border-left: 4px solid var(--goud);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+  }
+  footer {
+    background: var(--inkt);
+    color: var(--tekst-zacht);
+    text-align: center;
+    padding: 18px;
+    font-size: .8rem;
+  }
+</style>
+</head>
+<body>
+<div class="blad">
+  <header>
+    <span class="label">B1 &middot; Grof ontwerp</span>
+    <h1>Magic Meeting</h1>
+    <p>Toernooilogboek voor Magic the Gathering &mdash; Progressive Web App</p>
+  </header>
+  <div class="inhoud">
+
+    <p class="intro">
+      <strong>Magic Meeting</strong> is een mobiele app (PWA) waarmee een speler zijn
+      Magic: the Gathering-potjes en -toernooien bijhoudt. Per &laquo;meeting&raquo; legt de
+      gebruiker de datum, het gespeelde format, een omschrijving en het resultaat vast.
+      Via de <strong>Scryfall API</strong> koppelt de gebruiker een sleutelkaart aan elke
+      meeting; de app haalt automatisch de kaartafbeelding en kleuren op. Alle gegevens
+      worden lokaal opgeslagen in <strong>LocalStorage</strong>, zodat de app ook offline werkt.
+    </p>
+
+    <h2>1. Sitemap</h2>
+    <p>De app is een single-page application met vier schermen die via een vaste
+       navigatiebalk onderaan bereikbaar zijn.</p>
+    <div class="sitemap">
+      <div class="knoop">Magic Meeting (PWA)</div>
+      <div class="verbinding"></div>
+      <div class="tak">
+        <div class="scherm">Overzicht <small>startscherm</small></div>
+        <div class="scherm">Toevoegen <small>nieuwe meeting</small></div>
+        <div class="scherm">Statistieken <small>grafieken</small></div>
+        <div class="scherm">Over <small>info &amp; taal</small></div>
+      </div>
+    </div>
+    <p style="font-size:.86rem;color:var(--tekst-zacht)">
+      Elk scherm is vanaf elk ander scherm direct bereikbaar &mdash; er is geen diepere
+      navigatielaag. Dit houdt de app overzichtelijk en mobielvriendelijk.</p>
+
+    <h2>2. Paginastructuur</h2>
+    <p>Hieronder per scherm welke onderdelen er staan en wat de gebruiker er doet.</p>
+
+    <div class="scherm-kaart">
+      <h3>Scherm 1 &mdash; Overzicht (start)</h3>
+      <ul>
+        <li>Kopbalk met app-titel en taalknop (NL/EN).</li>
+        <li>Filterbalk: <em>alles &middot; dag &middot; week &middot; maand</em>.</li>
+        <li>Samenvatting: aantal meetings, totaal gewonnen potjes en winstpercentage.</li>
+        <li>Lijst van meetings, elk getoond als mini Magic-kaart met de sleutelkaart-afbeelding.</li>
+        <li>Per meeting een knop om die meeting te verwijderen.</li>
+      </ul>
+    </div>
+    <div class="scherm-kaart">
+      <h3>Scherm 2 &mdash; Toevoegen</h3>
+      <ul>
+        <li>Formulier: datum, format (categorie), omschrijving.</li>
+        <li>Resultaat: aantal gewonnen potjes en aantal gespeelde potjes.</li>
+        <li>Kaartzoeker: invoerveld met autocomplete via de Scryfall API + voorbeeldweergave van de kaart.</li>
+        <li>Knop &laquo;Meeting opslaan&raquo; &mdash; slaat het item op in LocalStorage.</li>
+      </ul>
+    </div>
+    <div class="scherm-kaart">
+      <h3>Scherm 3 &mdash; Statistieken</h3>
+      <ul>
+        <li>Kerncijfers: totaal meetings, gemiddelde winrate, beste format.</li>
+        <li>Grafiek van gewonnen potjes per maand (data-aggregatie + visualisatie).</li>
+        <li>Verdeling van meetings per format.</li>
+      </ul>
+    </div>
+    <div class="scherm-kaart">
+      <h3>Scherm 4 &mdash; Over</h3>
+      <ul>
+        <li>Uitleg over de app en de gebruikte techniek.</li>
+        <li>Bronvermelding van de Scryfall API.</li>
+        <li>Taalswitch NL/EN en een knop om alle gegevens te wissen (reset).</li>
+      </ul>
+    </div>
+
+    <h2>3. Datamodel</h2>
+    <p>De gegevens worden bewaard in <code>LocalStorage</code> onder de sleutel
+       <code>magicMeetings</code>: een JSON-array van meeting-objecten. De taalkeuze
+       staat los opgeslagen onder <code>magicTaal</code>.</p>
+
+    <h3>Een meeting-object</h3>
+    <table>
+      <tr><th>Veld</th><th>Type</th><th>Uitleg</th><th>Rubric</th></tr>
+      <tr><td><code>id</code></td><td>number</td><td>Uniek nummer (tijdstempel bij aanmaken).</td><td>&mdash;</td></tr>
+      <tr><td><code>datum</code></td><td>string</td><td>Speeldatum, formaat <code>JJJJ-MM-DD</code>.</td><td>datum</td></tr>
+      <tr><td><code>categorie</code></td><td>string</td><td>Het format: Standard, Modern, Commander, Draft of Pioneer.</td><td>categorie</td></tr>
+      <tr><td><code>omschrijving</code></td><td>string</td><td>Vrije tekst: gespeeld deck, tegenstander of notities.</td><td>omschrijving</td></tr>
+      <tr><td><code>gewonnen</code></td><td>number</td><td>Aantal gewonnen potjes &mdash; de waarde van het item.</td><td>waarde</td></tr>
+      <tr><td><code>gespeeld</code></td><td>number</td><td>Aantal gespeelde potjes (nodig om de winrate te berekenen).</td><td>&mdash;</td></tr>
+      <tr><td><code>kaartNaam</code></td><td>string</td><td>Naam van de sleutelkaart (uit Scryfall).</td><td>&mdash;</td></tr>
+      <tr><td><code>kaartAfbeelding</code></td><td>string</td><td>URL van de kaartafbeelding (uit Scryfall).</td><td>&mdash;</td></tr>
+      <tr><td><code>kleuren</code></td><td>array</td><td>Manakleuren van de kaart, bijv. <code>["U","B"]</code> (uit Scryfall).</td><td>&mdash;</td></tr>
+    </table>
+
+    <h3>Voorbeeld in JSON</h3>
+    <pre>[
+  {
+    "id": 1748160000000,
+    "datum": "2026-05-18",
+    "categorie": "Commander",
+    "omschrijving": "Atraxa-deck tegen Jeroen, vrijdagavond",
+    "gewonnen": 2,
+    "gespeeld": 3,
+    "kaartNaam": "Atraxa, Praetors' Voice",
+    "kaartAfbeelding": "https://cards.scryfall.io/normal/...jpg",
+    "kleuren": ["W", "U", "B", "G"]
+  }
+]</pre>
+
+    <h3>Samenhang</h3>
+    <p>De drie onderdelen sluiten op elkaar aan: de <strong>sitemap</strong> toont vier
+       schermen; de <strong>paginastructuur</strong> beschrijft per scherm welke velden
+       van het <strong>datamodel</strong> getoond of ingevuld worden. Het scherm
+       <em>Toevoegen</em> schrijft een meeting-object naar de array, <em>Overzicht</em>
+       leest en filtert die array, en <em>Statistieken</em> rekent erover (aggregatie).
+       Zo loopt er een duidelijke lijn van invoer &rarr; opslag &rarr; weergave &rarr; analyse.</p>
+
+  </div>
+  <footer>Magic Meeting &mdash; KW1C Software Development Niveau 4 &mdash; Grof ontwerp (B1)</footer>
+</div>
+</body>
+</html>

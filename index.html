@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Magic Meeting - houd je Magic: the Gathering potjes en toernooien bij.">
+  <meta name="theme-color" content="#1a1410">
+  <title>Magic Meeting</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ APP-OMHULSEL ============ -->
+  <div class="app">
+
+    <!-- ============ KOPBALK ============ -->
+    <header class="kop">
+      <div class="kop-titel">
+        <span class="mana-pentagram" aria-hidden="true">
+          <span class="pm pm-w"></span>
+          <span class="pm pm-u"></span>
+          <span class="pm pm-b"></span>
+          <span class="pm pm-r"></span>
+          <span class="pm pm-g"></span>
+        </span>
+        <h1>Magic Meeting</h1>
+      </div>
+      <button id="taalKnop" class="taal-knop" type="button" aria-label="Taal wisselen">NL</button>
+    </header>
+
+    <!-- ============ HOOFDINHOUD ============ -->
+    <main>
+
+      <!-- ---------- SCHERM 1: OVERZICHT ---------- -->
+      <section id="scherm-overzicht" class="scherm" aria-label="Overzicht">
+        <h2 data-i18n="overzicht_titel">Mijn meetings</h2>
+
+        <div class="filterbalk" role="group" aria-label="Filter op periode">
+          <button class="filter-knop actief" data-periode="alles" data-i18n="filter_alles">Alles</button>
+          <button class="filter-knop" data-periode="dag" data-i18n="filter_dag">Dag</button>
+          <button class="filter-knop" data-periode="week" data-i18n="filter_week">Week</button>
+          <button class="filter-knop" data-periode="maand" data-i18n="filter_maand">Maand</button>
+        </div>
+
+        <div class="samenvatting">
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statAantal">0</span>
+            <span class="samenvatting-label" data-i18n="stat_meetings">Meetings</span>
+          </div>
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statGewonnen">0</span>
+            <span class="samenvatting-label" data-i18n="stat_gewonnen">Gewonnen</span>
+          </div>
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statWinrate">0%</span>
+            <span class="samenvatting-label" data-i18n="stat_winrate">Winrate</span>
+          </div>
+        </div>
+
+        <ul id="meetingLijst" class="meeting-lijst"></ul>
+        <p id="leegMelding" class="leeg-melding" data-i18n="leeg_melding">
+          Nog geen meetings in deze periode. Voeg er een toe!
+        </p>
+      </section>
+
+      <!-- ---------- SCHERM 2: TOEVOEGEN ---------- -->
+      <section id="scherm-toevoegen" class="scherm verborgen" aria-label="Meeting toevoegen">
+        <h2 data-i18n="toevoegen_titel">Nieuwe meeting</h2>
+
+        <form id="meetingForm" novalidate>
+          <div class="veld">
+            <label for="invoerDatum" data-i18n="label_datum">Datum</label>
+            <input type="date" id="invoerDatum" required>
+          </div>
+
+          <div class="veld">
+            <label for="invoerFormat" data-i18n="label_format">Format</label>
+            <select id="invoerFormat" required>
+              <option value="Standard">Standard</option>
+              <option value="Modern">Modern</option>
+              <option value="Commander">Commander</option>
+              <option value="Draft">Draft</option>
+              <option value="Pioneer">Pioneer</option>
+            </select>
+          </div>
+
+          <div class="veld">
+            <label for="invoerKaart" data-i18n="label_kaart">Sleutelkaart (zoek via Scryfall)</label>
+            <input type="text" id="invoerKaart" autocomplete="off"
+                   data-i18n-ph="ph_kaart" placeholder="Typ een kaartnaam...">
+            <ul id="kaartSuggesties" class="kaart-suggesties"></ul>
+          </div>
+
+          <div id="kaartPreview" class="kaart-preview verborgen">
+            <img id="kaartPreviewImg" alt="Gekozen kaart">
+            <div>
+              <strong id="kaartPreviewNaam"></strong>
+              <span id="kaartPreviewKleuren" class="mana-rij"></span>
+            </div>
+          </div>
+
+          <div class="veld">
+            <label for="invoerOmschrijving" data-i18n="label_omschrijving">Omschrijving</label>
+            <textarea id="invoerOmschrijving" rows="2"
+                      data-i18n-ph="ph_omschrijving" placeholder="Deck, tegenstander of notities..."></textarea>
+          </div>
+
+          <div class="veld-rij">
+            <div class="veld">
+              <label for="invoerGewonnen" data-i18n="label_gewonnen">Gewonnen potjes</label>
+              <input type="number" id="invoerGewonnen" min="0" value="0" required>
+            </div>
+            <div class="veld">
+              <label for="invoerGespeeld" data-i18n="label_gespeeld">Gespeelde potjes</label>
+              <input type="number" id="invoerGespeeld" min="0" value="0" required>
+            </div>
+          </div>
+
+          <p id="formMelding" class="form-melding" role="alert"></p>
+          <button type="submit" class="hoofd-knop" data-i18n="knop_opslaan">Meeting opslaan</button>
+        </form>
+      </section>
+
+      <!-- ---------- SCHERM 3: STATISTIEKEN ---------- -->
+      <section id="scherm-statistieken" class="scherm verborgen" aria-label="Statistieken">
+        <h2 data-i18n="stats_titel">Statistieken</h2>
+
+        <div class="samenvatting">
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statTotaal">0</span>
+            <span class="samenvatting-label" data-i18n="stat_meetings">Meetings</span>
+          </div>
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statGemWinrate">0%</span>
+            <span class="samenvatting-label" data-i18n="stat_winrate">Winrate</span>
+          </div>
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statBesteFormat">&ndash;</span>
+            <span class="samenvatting-label" data-i18n="stat_besteformat">Top format</span>
+          </div>
+        </div>
+
+        <h3 data-i18n="stats_grafiek">Gewonnen potjes per maand</h3>
+        <canvas id="grafiek" width="320" height="180" aria-label="Grafiek gewonnen potjes per maand"></canvas>
+
+        <h3 data-i18n="stats_formats">Meetings per format</h3>
+        <div id="formatVerdeling" class="format-verdeling"></div>
+      </section>
+
+      <!-- ---------- SCHERM 4: OVER ---------- -->
+      <section id="scherm-over" class="scherm verborgen" aria-label="Over de app">
+        <h2 data-i18n="over_titel">Over Magic Meeting</h2>
+        <p data-i18n="over_tekst1">
+          Magic Meeting is een Progressive Web App waarmee je je Magic: the Gathering-potjes
+          en -toernooien bijhoudt. De app werkt offline en is installeerbaar op je telefoon.
+        </p>
+        <p data-i18n="over_tekst2">
+          Kaartgegevens komen van de Scryfall API. Je eigen meetings worden lokaal op je
+          apparaat opgeslagen in LocalStorage.
+        </p>
+
+        <h3 data-i18n="over_bron_titel">Bron</h3>
+        <p>
+          <a href="https://scryfall.com/docs/api" target="_blank" rel="noopener">Scryfall API</a>
+          &mdash; <span data-i18n="over_bron_tekst">kaartdata en afbeeldingen.</span>
+        </p>
+
+        <h3 data-i18n="over_taal_titel">Taal</h3>
+        <div class="taal-keuze">
+          <button class="taal-optie actief" data-taal="nl">Nederlands</button>
+          <button class="taal-optie" data-taal="en">English</button>
+        </div>
+
+        <h3 data-i18n="over_data_titel">Gegevens</h3>
+        <button id="resetKnop" class="gevaar-knop" type="button" data-i18n="knop_reset">
+          Alle meetings wissen
+        </button>
+
+        <p class="over-credit" data-i18n="over_credit">
+          KW1C &mdash; Software Development Niveau 4
+        </p>
+      </section>
+
+    </main>
+
+    <!-- ============ ONDERSTE NAVIGATIEBALK ============ -->
+    <nav class="onderbalk" aria-label="Hoofdnavigatie">
+      <button class="nav-knop actief" data-scherm="overzicht">
+        <span class="nav-icoon" aria-hidden="true">&#9776;</span>
+        <span class="nav-tekst" data-i18n="nav_overzicht">Overzicht</span>
+      </button>
+      <button class="nav-knop" data-scherm="toevoegen">
+        <span class="nav-icoon" aria-hidden="true">&#43;</span>
+        <span class="nav-tekst" data-i18n="nav_toevoegen">Toevoegen</span>
+      </button>
+      <button class="nav-knop" data-scherm="statistieken">
+        <span class="nav-icoon" aria-hidden="true">&#9650;</span>
+        <span class="nav-tekst" data-i18n="nav_statistieken">Stats</span>
+      </button>
+      <button class="nav-knop" data-scherm="over">
+        <span class="nav-icoon" aria-hidden="true">&#9432;</span>
+        <span class="nav-tekst" data-i18n="nav_over">Over</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script src="js/i18n.js"></script>
+  <script src="js/scryfall.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
