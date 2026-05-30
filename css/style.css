@@ -139,7 +139,7 @@ main {
 
 .scherm p { font-size: .94rem; margin-bottom: 10px; }
 
-.verborgen { display: none; }
+.verborgen { display: none !important; }
 
 /* ---------- Filterbalk ---------- */
 .filterbalk { display: flex; gap: 6px; margin-bottom: 16px; }
