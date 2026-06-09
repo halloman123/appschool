@@ -6,7 +6,7 @@
    - Scryfall-zoekopdrachten: altijd via het netwerk
    ======================================================= */
 
-const CACHE_NAAM = "magic-meeting-v11";
+const CACHE_NAAM = "magic-meeting-v12";
 
 /* alle eigen bestanden die de app nodig heeft om te werken */
 const APP_SHELL = [

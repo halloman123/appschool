@@ -176,9 +176,11 @@ function bevestigPopup(tekst) {
     const ja   = document.getElementById("popupJa");
     const nee  = document.getElementById("popupNee");
     document.getElementById("popupTekst").textContent = tekst;
+    laag.style.display = "flex";
     laag.classList.remove("verborgen");
 
     function sluit(antwoord) {
+      laag.style.display = "none";
       laag.classList.add("verborgen");
       ja.removeEventListener("click", jaH);
       nee.removeEventListener("click", neeH);
@@ -649,6 +651,11 @@ function start() {
     navigator.serviceWorker.register("service-worker.js").catch(function (e) {
       console.warn("Service worker niet geregistreerd:", e);
     });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", start);
+   });
   }
 }
 
