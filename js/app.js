@@ -161,11 +161,42 @@ function maakKaartElement(kaart) {
   return li;
 }
 
-function verwijderKaart(id) {
-  if (!confirm(t("kaart_verwijder_bevestig"))) return;
+async function verwijderKaart(id) {
+  if (!await bevestigPopup(t("kaart_verwijder_bevestig"))) return;
   kaarten = kaarten.filter(function (k) { return k.id !== id; });
   bewaarKaarten();
   toonOverzicht();
+}
+
+/* bevestigPopup() - eigen modal in plaats van browser-confirm.
+   Geeft een Promise terug die true (Ja) of false (Annuleer) levert. */
+function bevestigPopup(tekst) {
+  return new Promise(function (resolve) {
+    const laag = document.getElementById("bevestigModal");
+    const ja   = document.getElementById("popupJa");
+    const nee  = document.getElementById("popupNee");
+    document.getElementById("popupTekst").textContent = tekst;
+    laag.classList.remove("verborgen");
+
+    function sluit(antwoord) {
+      laag.classList.add("verborgen");
+      ja.removeEventListener("click", jaH);
+      nee.removeEventListener("click", neeH);
+      laag.removeEventListener("click", buitenH);
+      document.removeEventListener("keydown", escH);
+      resolve(antwoord);
+    }
+    function jaH()  { sluit(true);  }
+    function neeH() { sluit(false); }
+    function escH(e){ if (e.key === "Escape") sluit(false); }
+    function buitenH(e){ if (e.target === laag) sluit(false); }
+
+    ja.addEventListener("click", jaH);
+    nee.addEventListener("click", neeH);
+    laag.addEventListener("click", buitenH);
+    document.addEventListener("keydown", escH);
+    ja.focus();
+  });
 }
 
 /* ===== 4. Rekenfuncties ===== */
@@ -424,11 +455,11 @@ function behandelVriendToevoegen(event) {
   vulEigenaarDropdowns();
 }
 
-function verwijderVriend(naam) {
+async function verwijderVriend(naam) {
   if (naam === t("ik") || naam === "Ik" || naam === "Me") {
     toonFormMelding("vriendMelding", t("fout_ik_verwijderen"), "fout"); return;
   }
-  if (!confirm(t("vrienden_verwijder_bevestig"))) return;
+  if (!await bevestigPopup(t("vrienden_verwijder_bevestig"))) return;
   vrienden = vrienden.filter(function (v) { return v !== naam; });
   kaarten  = kaarten.filter(function (k) { return k.eigenaar !== naam; });
   if (actieveEigenaar === naam) actieveEigenaar = vrienden[0];
@@ -594,8 +625,8 @@ function koppelGebeurtenissen() {
     knop.addEventListener("click", function () { wisselTaal(knop.dataset.taal); });
   });
 
-  document.getElementById("resetKnop").addEventListener("click", function () {
-    if (!confirm(t("reset_bevestig"))) return;
+  document.getElementById("resetKnop").addEventListener("click", async function () {
+    if (!await bevestigPopup(t("reset_bevestig"))) return;
     kaarten = [];
     vrienden = [t("ik")];
     actieveEigenaar = vrienden[0];
@@ -620,7 +651,5 @@ function start() {
     });
   }
 }
-
-document.addEventListener("DOMContentLoaded", start);
 
 document.addEventListener("DOMContentLoaded", start);

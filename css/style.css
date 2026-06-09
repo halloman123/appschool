@@ -637,6 +637,59 @@ a { color: var(--goud-donker); }
   display: inline-block;
 }
 
+/* ---------- Bevestigingspopup (modal) ---------- */
+.popup-laag {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 19, 10, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+.popup-doos {
+  background: var(--paneel);
+  border: 3px solid var(--frame);
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 4px var(--goud-donker), 0 12px 30px rgba(0,0,0,.5);
+  padding: 22px 22px 18px;
+  max-width: 360px;
+  width: 100%;
+  animation: popup-in .15s ease-out;
+}
+@keyframes popup-in {
+  from { transform: scale(.92); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.popup-tekst {
+  font-size: 1rem;
+  color: var(--frame);
+  margin-bottom: 18px;
+  line-height: 1.45;
+}
+.popup-knoppen { display: flex; gap: 10px; }
+.popup-knop {
+  flex: 1;
+  padding: 11px 10px;
+  font-weight: 800;
+  font-size: .92rem;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.popup-nee {
+  background: var(--paneel-licht);
+  color: var(--frame);
+  border: 2px solid var(--goud-donker);
+}
+.popup-ja {
+  background: var(--mana-r);
+  color: #fff;
+  border: 2px solid var(--frame-rand);
+}
+.popup-knop:active { transform: scale(.97); }
+
 /* ---------- Grotere schermen: volledige kaart met geneste rand ---------- */
 @media (min-width: 540px) {
   body { padding: 28px 0; }
