@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Magic Meeting - houd je Magic: the Gathering potjes en toernooien bij.">
+  <meta name="description" content="Magic Meeting - houd je Magic the Gathering-verzameling bij, samen met je vrienden.">
   <meta name="theme-color" content="#1a1410">
   <title>Magic Meeting</title>
 
@@ -37,7 +37,12 @@
 
       <!-- ---------- SCHERM 1: OVERZICHT ---------- -->
       <section id="scherm-overzicht" class="scherm" aria-label="Overzicht">
-        <h2 data-i18n="overzicht_titel">Mijn meetings</h2>
+        <h2 data-i18n="overzicht_titel">Mijn kaarten</h2>
+
+        <div class="veld">
+          <label for="kiesEigenaar" data-i18n="label_bekijk">Bekijk verzameling van</label>
+          <select id="kiesEigenaar"></select>
+        </div>
 
         <div class="filterbalk" role="group" aria-label="Filter op periode">
           <button class="filter-knop actief" data-periode="alles" data-i18n="filter_alles">Alles</button>
@@ -46,127 +51,155 @@
           <button class="filter-knop" data-periode="maand" data-i18n="filter_maand">Maand</button>
         </div>
 
-        <div class="samenvatting">
-          <div class="samenvatting-vak">
-            <span class="samenvatting-getal" id="statAantal">0</span>
-            <span class="samenvatting-label" data-i18n="stat_meetings">Meetings</span>
+        <div class="extra-filters">
+          <div class="veld">
+            <label for="filterRarity" data-i18n="filter_rarity_label">Rarity</label>
+            <select id="filterRarity">
+              <option value="alles" data-i18n="filter_alle_rarity">Alle rarities</option>
+              <option value="common"   data-i18n="rarity_common">Common</option>
+              <option value="uncommon" data-i18n="rarity_uncommon">Uncommon</option>
+              <option value="rare"     data-i18n="rarity_rare">Rare</option>
+              <option value="mythic"   data-i18n="rarity_mythic">Mythic</option>
+            </select>
           </div>
-          <div class="samenvatting-vak">
-            <span class="samenvatting-getal" id="statGewonnen">0</span>
-            <span class="samenvatting-label" data-i18n="stat_gewonnen">Gewonnen</span>
-          </div>
-          <div class="samenvatting-vak">
-            <span class="samenvatting-getal" id="statWinrate">0%</span>
-            <span class="samenvatting-label" data-i18n="stat_winrate">Winrate</span>
+          <div class="veld">
+            <label for="filterSet" data-i18n="filter_set_label">Pak</label>
+            <select id="filterSet">
+              <option value="alles" data-i18n="filter_alle_sets">Alle pakken</option>
+            </select>
           </div>
         </div>
 
-        <ul id="meetingLijst" class="meeting-lijst"></ul>
+        <div class="samenvatting">
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statAantal">0</span>
+            <span class="samenvatting-label" data-i18n="stat_kaarten">Kaarten</span>
+          </div>
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statWaarde">&euro;0</span>
+            <span class="samenvatting-label" data-i18n="stat_waarde">Waarde</span>
+          </div>
+          <div class="samenvatting-vak">
+            <span class="samenvatting-getal" id="statTopKleur">&ndash;</span>
+            <span class="samenvatting-label" data-i18n="stat_topkleur">Top kleur</span>
+          </div>
+        </div>
+
+        <ul id="kaartLijst" class="meeting-lijst"></ul>
         <p id="leegMelding" class="leeg-melding" data-i18n="leeg_melding">
-          Nog geen meetings in deze periode. Voeg er een toe!
+          Deze verzameling is nog leeg. Voeg een kaart toe!
         </p>
       </section>
 
       <!-- ---------- SCHERM 2: TOEVOEGEN ---------- -->
-      <section id="scherm-toevoegen" class="scherm verborgen" aria-label="Meeting toevoegen">
-        <h2 data-i18n="toevoegen_titel">Nieuwe meeting</h2>
+      <section id="scherm-toevoegen" class="scherm verborgen" aria-label="Kaart toevoegen">
+        <h2 data-i18n="toevoegen_titel">Nieuwe kaart</h2>
 
-        <form id="meetingForm" novalidate>
+        <form id="kaartForm">
           <div class="veld">
-            <label for="invoerDatum" data-i18n="label_datum">Datum</label>
+            <label for="invoerEigenaar" data-i18n="label_eigenaar">Voor wie?</label>
+            <select id="invoerEigenaar" required></select>
+          </div>
+
+          <div class="veld">
+            <label for="invoerDatum" data-i18n="label_datum">Datum gekregen</label>
             <input type="date" id="invoerDatum" required>
           </div>
 
           <div class="veld">
-            <label for="invoerFormat" data-i18n="label_format">Format</label>
-            <select id="invoerFormat" required>
-              <option value="Standard">Standard</option>
-              <option value="Modern">Modern</option>
-              <option value="Commander">Commander</option>
-              <option value="Draft">Draft</option>
-              <option value="Pioneer">Pioneer</option>
-            </select>
-          </div>
-
-          <div class="veld">
-            <label for="invoerKaart" data-i18n="label_kaart">Sleutelkaart (zoek via Scryfall)</label>
-            <input type="text" id="invoerKaart" autocomplete="off"
+            <label for="invoerKaart" data-i18n="label_kaart">Zoek een kaart (via Scryfall)</label>
+            <input type="text" id="invoerKaart" autocomplete="off" required
                    data-i18n-ph="ph_kaart" placeholder="Typ een kaartnaam...">
             <ul id="kaartSuggesties" class="kaart-suggesties"></ul>
           </div>
 
           <div id="kaartPreview" class="kaart-preview verborgen">
             <img id="kaartPreviewImg" alt="Gekozen kaart">
-            <div>
+            <div class="kaart-preview-info">
               <strong id="kaartPreviewNaam"></strong>
               <span id="kaartPreviewKleuren" class="mana-rij"></span>
+              <div class="kaart-preview-meta">
+                <span><span data-i18n="auto_rarity">Rarity (auto)</span>:
+                  <span id="kaartPreviewRarity" class="rarity-badge">&ndash;</span></span>
+                <span><span data-i18n="auto_prijs">Prijs (auto)</span>:
+                  <strong id="kaartPreviewPrijs">&euro;0,00</strong></span>
+              </div>
             </div>
           </div>
 
           <div class="veld">
-            <label for="invoerOmschrijving" data-i18n="label_omschrijving">Omschrijving</label>
-            <textarea id="invoerOmschrijving" rows="2"
-                      data-i18n-ph="ph_omschrijving" placeholder="Deck, tegenstander of notities..."></textarea>
-          </div>
-
-          <div class="veld-rij">
-            <div class="veld">
-              <label for="invoerGewonnen" data-i18n="label_gewonnen">Gewonnen potjes</label>
-              <input type="number" id="invoerGewonnen" min="0" value="0" required>
-            </div>
-            <div class="veld">
-              <label for="invoerGespeeld" data-i18n="label_gespeeld">Gespeelde potjes</label>
-              <input type="number" id="invoerGespeeld" min="0" value="0" required>
-            </div>
+            <label for="invoerOmschrijving" data-i18n="label_omschrijving">Notitie</label>
+            <textarea id="invoerOmschrijving" rows="2" required
+                      data-i18n-ph="ph_omschrijving" placeholder="Bijvoorbeeld: gekregen op verjaardag"></textarea>
           </div>
 
           <p id="formMelding" class="form-melding" role="alert"></p>
-          <button type="submit" class="hoofd-knop" data-i18n="knop_opslaan">Meeting opslaan</button>
+          <button type="submit" class="hoofd-knop" data-i18n="knop_opslaan">Kaart opslaan</button>
         </form>
       </section>
 
-      <!-- ---------- SCHERM 3: STATISTIEKEN ---------- -->
+      <!-- ---------- SCHERM 3: VRIENDEN ---------- -->
+      <section id="scherm-vrienden" class="scherm verborgen" aria-label="Vrienden">
+        <h2 data-i18n="vrienden_titel">Vrienden</h2>
+        <p data-i18n="vrienden_uitleg">
+          Iedere vriend heeft zijn eigen verzameling. Tik op een naam om die verzameling te openen.
+        </p>
+
+        <ul id="vriendenLijst" class="vrienden-lijst"></ul>
+
+        <form id="vriendForm" class="vriend-form">
+          <div class="veld">
+            <label for="invoerVriend" data-i18n="vrienden_nieuw_label">Nieuwe vriend</label>
+            <input type="text" id="invoerVriend" required
+                   data-i18n-ph="vrienden_nieuw_ph" placeholder="Naam van vriend">
+          </div>
+          <p id="vriendMelding" class="form-melding" role="alert"></p>
+          <button type="submit" class="hoofd-knop" data-i18n="vrienden_toevoegen">Vriend toevoegen</button>
+        </form>
+      </section>
+
+      <!-- ---------- SCHERM 4: STATISTIEKEN ---------- -->
       <section id="scherm-statistieken" class="scherm verborgen" aria-label="Statistieken">
         <h2 data-i18n="stats_titel">Statistieken</h2>
+        <p><span data-i18n="stats_voor">Statistieken van</span>: <strong id="statsEigenaar">&ndash;</strong></p>
 
         <div class="samenvatting">
           <div class="samenvatting-vak">
             <span class="samenvatting-getal" id="statTotaal">0</span>
-            <span class="samenvatting-label" data-i18n="stat_meetings">Meetings</span>
+            <span class="samenvatting-label" data-i18n="stat_kaarten">Kaarten</span>
           </div>
           <div class="samenvatting-vak">
-            <span class="samenvatting-getal" id="statGemWinrate">0%</span>
-            <span class="samenvatting-label" data-i18n="stat_winrate">Winrate</span>
+            <span class="samenvatting-getal" id="statTotaalWaarde">&euro;0</span>
+            <span class="samenvatting-label" data-i18n="stat_waarde">Waarde</span>
           </div>
           <div class="samenvatting-vak">
-            <span class="samenvatting-getal" id="statBesteFormat">&ndash;</span>
-            <span class="samenvatting-label" data-i18n="stat_besteformat">Top format</span>
+            <span class="samenvatting-getal" id="statTopKleur2">&ndash;</span>
+            <span class="samenvatting-label" data-i18n="stat_topkleur">Top kleur</span>
           </div>
         </div>
 
-        <h3 data-i18n="stats_grafiek">Gewonnen potjes per maand</h3>
-        <canvas id="grafiek" width="320" height="180" aria-label="Grafiek gewonnen potjes per maand"></canvas>
+        <h3 data-i18n="stats_grafiek">Kaarten per kleur</h3>
+        <canvas id="grafiek" width="320" height="200" aria-label="Grafiek kaarten per kleur"></canvas>
+        <div id="kleurLegenda" class="kleur-legenda"></div>
 
-        <h3 data-i18n="stats_formats">Meetings per format</h3>
-        <div id="formatVerdeling" class="format-verdeling"></div>
+        <h3 data-i18n="stats_rarity">Kaarten per rarity</h3>
+        <div id="rarityVerdeling" class="format-verdeling"></div>
       </section>
 
-      <!-- ---------- SCHERM 4: OVER ---------- -->
+      <!-- ---------- SCHERM 5: OVER ---------- -->
       <section id="scherm-over" class="scherm verborgen" aria-label="Over de app">
         <h2 data-i18n="over_titel">Over Magic Meeting</h2>
         <p data-i18n="over_tekst1">
-          Magic Meeting is een Progressive Web App waarmee je je Magic: the Gathering-potjes
-          en -toernooien bijhoudt. De app werkt offline en is installeerbaar op je telefoon.
+          Magic Meeting is een Progressive Web App waarmee jij en je vrienden je Magic: the Gathering-verzameling bijhouden.
         </p>
         <p data-i18n="over_tekst2">
-          Kaartgegevens komen van de Scryfall API. Je eigen meetings worden lokaal op je
-          apparaat opgeslagen in LocalStorage.
+          Kaartgegevens, afbeeldingen en prijzen komen van de Scryfall API. Je eigen verzamelingen worden lokaal op je apparaat opgeslagen in LocalStorage.
         </p>
 
         <h3 data-i18n="over_bron_titel">Bron</h3>
         <p>
           <a href="https://scryfall.com/docs/api" target="_blank" rel="noopener">Scryfall API</a>
-          &mdash; <span data-i18n="over_bron_tekst">kaartdata en afbeeldingen.</span>
+          &mdash; <span data-i18n="over_bron_tekst">kaartdata, afbeeldingen en prijzen.</span>
         </p>
 
         <h3 data-i18n="over_taal_titel">Taal</h3>
@@ -177,7 +210,7 @@
 
         <h3 data-i18n="over_data_titel">Gegevens</h3>
         <button id="resetKnop" class="gevaar-knop" type="button" data-i18n="knop_reset">
-          Alle meetings wissen
+          Alle gegevens wissen
         </button>
 
         <p class="over-credit" data-i18n="over_credit">
@@ -196,6 +229,10 @@
       <button class="nav-knop" data-scherm="toevoegen">
         <span class="nav-icoon" aria-hidden="true">&#43;</span>
         <span class="nav-tekst" data-i18n="nav_toevoegen">Toevoegen</span>
+      </button>
+      <button class="nav-knop" data-scherm="vrienden">
+        <span class="nav-icoon" aria-hidden="true">&#9733;</span>
+        <span class="nav-tekst" data-i18n="nav_vrienden">Vrienden</span>
       </button>
       <button class="nav-knop" data-scherm="statistieken">
         <span class="nav-icoon" aria-hidden="true">&#9650;</span>

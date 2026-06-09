@@ -1,153 +1,200 @@
 /* =======================================================
    i18n.js - vertalingen voor de taalswitch (NL / EN)
-   Bevat alle teksten in twee talen + een functie die de
-   teksten in de pagina vervangt.
    ======================================================= */
 
 const VERTALINGEN = {
   nl: {
-    /* navigatie */
     nav_overzicht: "Overzicht",
     nav_toevoegen: "Toevoegen",
+    nav_vrienden: "Vrienden",
     nav_statistieken: "Stats",
     nav_over: "Over",
 
-    /* overzicht */
-    overzicht_titel: "Mijn meetings",
+    overzicht_titel: "Mijn kaarten",
+    label_bekijk: "Bekijk verzameling van",
     filter_alles: "Alles",
     filter_dag: "Dag",
     filter_week: "Week",
     filter_maand: "Maand",
-    stat_meetings: "Meetings",
-    stat_gewonnen: "Gewonnen",
-    stat_winrate: "Winrate",
-    stat_besteformat: "Top format",
-    leeg_melding: "Nog geen meetings in deze periode. Voeg er een toe!",
-    resultaat_gewonnen: "gewonnen",
+    filter_rarity_label: "Rarity",
+    filter_set_label: "Pak",
+    filter_alle_rarity: "Alle rarities",
+    filter_alle_sets: "Alle pakken",
+    stat_kaarten: "Kaarten",
+    stat_waarde: "Waarde",
+    stat_topkleur: "Top kleur",
+    leeg_melding: "Deze verzameling is nog leeg. Voeg een kaart toe!",
+    rarity_label: "Rarity",
 
-    /* toevoegen */
-    toevoegen_titel: "Nieuwe meeting",
-    label_datum: "Datum",
-    label_format: "Format",
-    label_kaart: "Sleutelkaart (zoek via Scryfall)",
-    label_omschrijving: "Omschrijving",
-    label_gewonnen: "Gewonnen potjes",
-    label_gespeeld: "Gespeelde potjes",
+    toevoegen_titel: "Nieuwe kaart",
+    label_eigenaar: "Voor wie?",
+    label_datum: "Datum gekregen",
+    label_kaart: "Zoek een kaart (via Scryfall)",
+    label_omschrijving: "Notitie",
     ph_kaart: "Typ een kaartnaam...",
-    ph_omschrijving: "Deck, tegenstander of notities...",
-    knop_opslaan: "Meeting opslaan",
+    ph_omschrijving: "Bijvoorbeeld: gekregen op verjaardag",
+    knop_opslaan: "Kaart opslaan",
     fout_datum: "Kies een datum.",
-    fout_aantal: "Gewonnen potjes kan niet groter zijn dan gespeelde potjes.",
-    fout_kaart: "Zoek en kies eerst een sleutelkaart.",
-    opslaan_ok: "Meeting opgeslagen!",
+    fout_kaart: "Kies een kaart uit de zoekresultaten.",
+    fout_eigenaar: "Kies een vriend (eigenaar).",
+    opslaan_ok: "Kaart opgeslagen!",
+    auto_prijs: "Prijs (auto)",
+    auto_rarity: "Rarity (auto)",
 
-    /* statistieken */
+    vrienden_titel: "Vrienden",
+    vrienden_uitleg: "Iedere vriend heeft zijn eigen verzameling. Tik op een naam om die verzameling te openen.",
+    vrienden_nieuw_label: "Nieuwe vriend",
+    vrienden_nieuw_ph: "Naam van vriend",
+    vrienden_toevoegen: "Vriend toevoegen",
+    vrienden_open: "Open verzameling",
+    vrienden_kaarten: "kaarten",
+    vrienden_verwijder_bevestig: "Wil je deze vriend en alle bijbehorende kaarten echt verwijderen?",
+    fout_naam_leeg: "Vul een naam in.",
+    fout_naam_bestaat: "Die naam staat er al.",
+    fout_ik_verwijderen: "Jezelf kun je niet verwijderen.",
+
     stats_titel: "Statistieken",
-    stats_grafiek: "Gewonnen potjes per maand",
-    stats_formats: "Meetings per format",
-    grafiek_leeg: "Nog geen gegevens om te tonen.",
+    stats_voor: "Statistieken van",
+    stats_grafiek: "Kaarten per kleur",
+    stats_rarity: "Kaarten per rarity",
+    grafiek_leeg: "Nog geen kaarten om te tonen.",
 
-    /* over */
+    kleur_W: "Wit",
+    kleur_U: "Blauw",
+    kleur_B: "Zwart",
+    kleur_R: "Rood",
+    kleur_G: "Groen",
+    kleur_C: "Kleurloos",
+    kleur_M: "Meerkleurig",
+
+    rarity_common: "Common",
+    rarity_uncommon: "Uncommon",
+    rarity_rare: "Rare",
+    rarity_mythic: "Mythic",
+
     over_titel: "Over Magic Meeting",
-    over_tekst1: "Magic Meeting is een Progressive Web App waarmee je je Magic: the Gathering-potjes en -toernooien bijhoudt. De app werkt offline en is installeerbaar op je telefoon.",
-    over_tekst2: "Kaartgegevens komen van de Scryfall API. Je eigen meetings worden lokaal op je apparaat opgeslagen in LocalStorage.",
+    over_tekst1: "Magic Meeting is een Progressive Web App waarmee jij en je vrienden je Magic: the Gathering-verzameling bijhouden. De app werkt offline en is installeerbaar op je telefoon.",
+    over_tekst2: "Kaartgegevens, afbeeldingen en prijzen komen van de Scryfall API. Je eigen verzamelingen worden lokaal op je apparaat opgeslagen in LocalStorage.",
     over_bron_titel: "Bron",
-    over_bron_tekst: "kaartdata en afbeeldingen.",
+    over_bron_tekst: "kaartdata, afbeeldingen en prijzen.",
     over_taal_titel: "Taal",
     over_data_titel: "Gegevens",
-    knop_reset: "Alle meetings wissen",
-    reset_bevestig: "Weet je zeker dat je ALLE meetings wilt wissen?",
-    over_credit: "KW1C - Software Development Niveau 4"
+    knop_reset: "Alle gegevens wissen",
+    reset_bevestig: "Weet je zeker dat je ALLE vrienden en kaarten wilt wissen?",
+    over_credit: "KW1C - Software Development Niveau 4",
+
+    ik: "Ik"
   },
 
   en: {
-    /* navigation */
     nav_overzicht: "Overview",
     nav_toevoegen: "Add",
+    nav_vrienden: "Friends",
     nav_statistieken: "Stats",
     nav_over: "About",
 
-    /* overview */
-    overzicht_titel: "My meetings",
+    overzicht_titel: "My cards",
+    label_bekijk: "Viewing collection of",
     filter_alles: "All",
     filter_dag: "Day",
     filter_week: "Week",
     filter_maand: "Month",
-    stat_meetings: "Meetings",
-    stat_gewonnen: "Wins",
-    stat_winrate: "Win rate",
-    stat_besteformat: "Top format",
-    leeg_melding: "No meetings in this period yet. Add one!",
-    resultaat_gewonnen: "won",
+    filter_rarity_label: "Rarity",
+    filter_set_label: "Set",
+    filter_alle_rarity: "All rarities",
+    filter_alle_sets: "All sets",
+    stat_kaarten: "Cards",
+    stat_waarde: "Value",
+    stat_topkleur: "Top color",
+    leeg_melding: "This collection is empty. Add a card!",
+    rarity_label: "Rarity",
 
-    /* add */
-    toevoegen_titel: "New meeting",
-    label_datum: "Date",
-    label_format: "Format",
-    label_kaart: "Key card (search via Scryfall)",
-    label_omschrijving: "Description",
-    label_gewonnen: "Games won",
-    label_gespeeld: "Games played",
+    toevoegen_titel: "New card",
+    label_eigenaar: "For whom?",
+    label_datum: "Date acquired",
+    label_kaart: "Search a card (via Scryfall)",
+    label_omschrijving: "Note",
     ph_kaart: "Type a card name...",
-    ph_omschrijving: "Deck, opponent or notes...",
-    knop_opslaan: "Save meeting",
+    ph_omschrijving: "For example: got it for my birthday",
+    knop_opslaan: "Save card",
     fout_datum: "Please choose a date.",
-    fout_aantal: "Games won cannot be greater than games played.",
-    fout_kaart: "Please search and pick a key card first.",
-    opslaan_ok: "Meeting saved!",
+    fout_kaart: "Please pick a card from the search results.",
+    fout_eigenaar: "Please choose a friend (owner).",
+    opslaan_ok: "Card saved!",
+    auto_prijs: "Price (auto)",
+    auto_rarity: "Rarity (auto)",
 
-    /* statistics */
+    vrienden_titel: "Friends",
+    vrienden_uitleg: "Each friend has their own collection. Tap a name to open that collection.",
+    vrienden_nieuw_label: "New friend",
+    vrienden_nieuw_ph: "Friend's name",
+    vrienden_toevoegen: "Add friend",
+    vrienden_open: "Open collection",
+    vrienden_kaarten: "cards",
+    vrienden_verwijder_bevestig: "Are you sure you want to delete this friend and all their cards?",
+    fout_naam_leeg: "Please enter a name.",
+    fout_naam_bestaat: "That name already exists.",
+    fout_ik_verwijderen: "You cannot delete yourself.",
+
     stats_titel: "Statistics",
-    stats_grafiek: "Games won per month",
-    stats_formats: "Meetings per format",
-    grafiek_leeg: "No data to show yet.",
+    stats_voor: "Statistics of",
+    stats_grafiek: "Cards per color",
+    stats_rarity: "Cards per rarity",
+    grafiek_leeg: "No cards to show yet.",
 
-    /* about */
+    kleur_W: "White",
+    kleur_U: "Blue",
+    kleur_B: "Black",
+    kleur_R: "Red",
+    kleur_G: "Green",
+    kleur_C: "Colorless",
+    kleur_M: "Multicolor",
+
+    rarity_common: "Common",
+    rarity_uncommon: "Uncommon",
+    rarity_rare: "Rare",
+    rarity_mythic: "Mythic",
+
     over_titel: "About Magic Meeting",
-    over_tekst1: "Magic Meeting is a Progressive Web App to track your Magic: the Gathering games and tournaments. The app works offline and can be installed on your phone.",
-    over_tekst2: "Card data comes from the Scryfall API. Your own meetings are stored locally on your device in LocalStorage.",
+    over_tekst1: "Magic Meeting is a Progressive Web App for tracking your and your friends' Magic: the Gathering collections. The app works offline and can be installed on your phone.",
+    over_tekst2: "Card data, images and prices come from the Scryfall API. Your collections are stored locally on your device in LocalStorage.",
     over_bron_titel: "Source",
-    over_bron_tekst: "card data and images.",
+    over_bron_tekst: "card data, images and prices.",
     over_taal_titel: "Language",
     over_data_titel: "Data",
-    knop_reset: "Delete all meetings",
-    reset_bevestig: "Are you sure you want to delete ALL meetings?",
-    over_credit: "KW1C - Software Development Level 4"
+    knop_reset: "Delete all data",
+    reset_bevestig: "Are you sure you want to delete ALL friends and cards?",
+    over_credit: "KW1C - Software Development Level 4",
+
+    ik: "Me"
   }
 };
 
-/* Huidige taal - standaard Nederlands, kan uit LocalStorage komen */
 let huidigeTaal = localStorage.getItem("magicTaal") || "nl";
 
-/* t() - haalt een vertaalde tekst op via een sleutel */
 function t(sleutel) {
   const woordenboek = VERTALINGEN[huidigeTaal] || VERTALINGEN.nl;
   return woordenboek[sleutel] || sleutel;
 }
 
-/* pasTaalToe() - vervangt alle statische teksten in de pagina */
 function pasTaalToe(taal) {
   huidigeTaal = VERTALINGEN[taal] ? taal : "nl";
   localStorage.setItem("magicTaal", huidigeTaal);
   document.documentElement.lang = huidigeTaal;
 
-  /* teksten (data-i18n) */
   document.querySelectorAll("[data-i18n]").forEach(function (element) {
     const sleutel = element.getAttribute("data-i18n");
     element.textContent = t(sleutel);
   });
 
-  /* placeholders (data-i18n-ph) */
   document.querySelectorAll("[data-i18n-ph]").forEach(function (element) {
     const sleutel = element.getAttribute("data-i18n-ph");
     element.placeholder = t(sleutel);
   });
 
-  /* knop in de kopbalk toont de actieve taal */
   const taalKnop = document.getElementById("taalKnop");
   if (taalKnop) taalKnop.textContent = huidigeTaal.toUpperCase();
 
-  /* actieve taalknop op het scherm "Over" markeren */
   document.querySelectorAll(".taal-optie").forEach(function (knop) {
     knop.classList.toggle("actief", knop.dataset.taal === huidigeTaal);
   });

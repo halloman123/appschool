@@ -1,68 +1,80 @@
 /* =======================================================
    scryfall.js - koppeling met de Scryfall API
    Documentatie: https://scryfall.com/docs/api
-   Twee functies:
-     zoekKaartnamen()  -> lijst met kaartnamen (autocomplete)
-     haalKaartOp()     -> gegevens van een specifieke kaart
+   Functies:
+     zoekKaarten()  -> lijst met kaarten (incl. afbeelding/prijs/rarity)
+     haalKaartOp()  -> gegevens van een specifieke kaart (op naam)
    ======================================================= */
 
 const SCRYFALL_BASIS = "https://api.scryfall.com";
 
 /* ---------------------------------------------------------
-   zoekKaartnamen(zoekterm)
-   Vraagt de Scryfall-autocomplete om maximaal 20 kaartnamen
-   die op de zoekterm lijken. Geeft een array van strings terug.
+   zoekKaarten(zoekterm)
+   Zoekt kaarten via Scryfall en geeft een lijst objecten
+   terug met naam, mini-afbeelding (thumb), kaartafbeelding,
+   kleuren, rarity, prijs in euro en set-informatie.
    --------------------------------------------------------- */
-async function zoekKaartnamen(zoekterm) {
+async function zoekKaarten(zoekterm) {
   if (!zoekterm || zoekterm.trim().length < 2) {
     return [];
   }
-
-  const url = SCRYFALL_BASIS + "/cards/autocomplete?q=" + encodeURIComponent(zoekterm);
+  const url = SCRYFALL_BASIS + "/cards/search?q=" +
+              encodeURIComponent(zoekterm) +
+              "&order=name&unique=cards";
   const reactie = await fetch(url);
-
-  if (!reactie.ok) {
-    throw new Error("Scryfall autocomplete gaf status " + reactie.status);
+  if (reactie.status === 404) {
+    return [];
   }
-
+  if (!reactie.ok) {
+    throw new Error("Scryfall zoeken gaf status " + reactie.status);
+  }
   const data = await reactie.json();
-  return data.data || [];
+  return (data.data || []).slice(0, 10).map(maakKaartObject);
 }
 
 /* ---------------------------------------------------------
-   haalKaartOp(kaartnaam)
-   Haalt een exacte kaart op en vormt het antwoord om tot
-   een eenvoudig object dat de app gebruikt:
-     { naam, afbeelding, kleuren }
+   haalKaartOp(kaartnaam) - exacte kaart op naam ophalen.
    --------------------------------------------------------- */
 async function haalKaartOp(kaartnaam) {
   const url = SCRYFALL_BASIS + "/cards/named?exact=" + encodeURIComponent(kaartnaam);
   const reactie = await fetch(url);
-
   if (!reactie.ok) {
     throw new Error("Kaart niet gevonden op Scryfall (status " + reactie.status + ")");
   }
-
   const kaart = await reactie.json();
-  return {
-    naam: kaart.name,
-    afbeelding: kiesAfbeelding(kaart),
-    kleuren: kaart.color_identity || []
-  };
+  return maakKaartObject(kaart);
 }
 
 /* ---------------------------------------------------------
-   kiesAfbeelding(kaart) - hulpfunctie
-   Sommige kaarten hebben twee kanten; dan staan de
-   afbeeldingen in card_faces. Deze functie kiest altijd
-   een bruikbare afbeelding (de "art_crop": alleen de art).
+   maakKaartObject(kaart) - hulpfunctie die een ruw Scryfall-
+   antwoord omzet naar het object dat de app gebruikt.
+   Houdt rekening met dubbelzijdige kaarten en ontbrekende prijzen.
    --------------------------------------------------------- */
-function kiesAfbeelding(kaart) {
-  if (kaart.image_uris && kaart.image_uris.art_crop) {
-    return kaart.image_uris.art_crop;
-  }
-  if (kaart.card_faces && kaart.card_faces[0] && kaart.card_faces[0].image_uris) {
-    return kaart.card_faces[0].image_uris.art_crop;
-  }
-  return ""; /* geen afbeelding beschikbaar */
+function maakKaartObject(kaart) {
+  const beelden = kaart.image_uris ||
+                  (kaart.card_faces &&
+                   kaart.card_faces[0] &&
+                   kaart.card_faces[0].image_uris) ||
+                  {};
+  const prijzen = kaart.prices || {};
+  return {
+    naam: kaart.name,
+    thumb: beelden.small || beelden.art_crop || "",
+    afbeelding: beelden.art_crop || beelden.normal || beelden.small || "",
+    kleuren: kaart.color_identity || [],
+    rarity: kaart.rarity || "common",
+    prijs: leesPrijs(prijzen),
+    set: kaart.set || "",
+    setNaam: kaart.set_name || ""
+  };
+}
+
+/* leesPrijs() - leest de prijs in euro; valt terug op 0 */
+function leesPrijs(prijzen) {
+  const eur = parseFloat(prijzen.eur);
+  if (!isNaN(eur)) return eur;
+  /* geen europrijs, wel dollar? ruwe omrekening */
+  const usd = parseFloat(prijzen.usd);
+  if (!isNaN(usd)) return Math.round(usd * 0.92 * 100) / 100;
+  return 0;
 }

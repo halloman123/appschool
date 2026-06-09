@@ -318,13 +318,28 @@ main {
 }
 .kaart-suggesties.zichtbaar { display: block; }
 .kaart-suggesties li {
-  padding: 8px 11px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
   font-size: .88rem;
   cursor: pointer;
   background: var(--paneel-licht);
   border-bottom: 1px solid var(--rand);
 }
 .kaart-suggesties li:hover { background: #e0d0ad; }
+
+.suggestie-thumb {
+  width: 38px;
+  height: 53px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--goud-donker);
+  flex-shrink: 0;
+  background: var(--oval);
+}
+
+.suggestie-naam { line-height: 1.2; }
 
 .kaart-preview {
   display: flex;
@@ -481,6 +496,145 @@ a { color: var(--goud-donker); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .03em;
+}
+
+/* ---------- Eigenaar-dropdown bovenaan ---------- */
+#kiesEigenaar, #invoerEigenaar {
+  font-weight: 700;
+}
+
+/* ---------- Extra filters (rarity + set) ---------- */
+.extra-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.extra-filters .veld {
+  flex: 1;
+  margin-bottom: 0;
+}
+.extra-filters select {
+  font-size: .85rem;
+  padding: 7px 9px;
+}
+
+/* ---------- Kaart-preview: extra info (rarity / prijs) ---------- */
+.kaart-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kaart-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: .82rem;
+  color: var(--tekst-zacht);
+  margin-top: 4px;
+}
+.kaart-preview-meta strong { color: var(--frame); }
+
+/* ---------- Rarity-badge ---------- */
+.rarity-badge {
+  display: inline-block;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1.5px solid var(--frame-rand);
+  background: #b6b1a8;
+  color: var(--frame);
+}
+.rarity-common   { background: #b6b1a8; color: var(--frame); }
+.rarity-uncommon { background: #c0d4dc; color: #1d3a48; }
+.rarity-rare     { background: #d8c179; color: #4a3a10; }
+.rarity-mythic   { background: #e07a3a; color: #fff; }
+
+/* ---------- Vriendenlijst ---------- */
+.vrienden-lijst {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.vriend-rij {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--paneel-licht);
+  border: 2px solid var(--frame);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.vriend-rij.actief {
+  background: linear-gradient(180deg, #f6efdd, #ead7a8);
+  border-color: var(--goud);
+  box-shadow: 0 0 0 2px var(--goud) inset;
+}
+.vriend-naam {
+  flex: 1;
+  font-weight: 800;
+  color: var(--frame);
+}
+.vriend-aantal {
+  font-size: .78rem;
+  color: var(--tekst-zacht);
+  background: var(--rand);
+  border-radius: 99px;
+  padding: 2px 9px;
+  font-weight: 700;
+}
+.vriend-knop {
+  padding: 6px 10px;
+  font-size: .8rem;
+  font-weight: 700;
+  background: var(--frame);
+  color: var(--paneel-licht);
+  border: 2px solid var(--frame-rand);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.vriend-verwijder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--mana-r);
+  background: var(--paneel-licht);
+  color: var(--mana-r);
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.vriend-form {
+  border-top: 2px solid var(--rand);
+  padding-top: 16px;
+}
+
+/* ---------- Kleur-legenda onder de grafiek ---------- */
+.kleur-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: .82rem;
+  margin-top: 8px;
+  margin-bottom: 18px;
+}
+.legenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legenda-stip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--frame-rand);
+  display: inline-block;
 }
 
 /* ---------- Grotere schermen: volledige kaart met geneste rand ---------- */

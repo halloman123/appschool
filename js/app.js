@@ -1,133 +1,111 @@
 /* =======================================================
-   app.js - hoofdlogica van Magic Meeting
-   Onderdelen:
-     1. Gegevens laden/bewaren (LocalStorage)
-     2. Schermnavigatie
-     3. Overzicht tonen + filteren op periode
-     4. Rekenfuncties (winrate e.d.)
-     5. Meeting toevoegen (formulier + Scryfall)
-     6. Statistieken + grafiek (canvas)
-     7. Taalswitch
-     8. Reset + opstart
+   app.js - hoofdlogica van Magic Meeting (verzameling-app)
    ======================================================= */
 
 "use strict";
 
-/* ---------- Constanten en toestand ---------- */
-const OPSLAG_SLEUTEL = "magicMeetings";
+const SLEUTEL_KAARTEN  = "magicKaarten";
+const SLEUTEL_VRIENDEN = "magicVrienden";
+const SLEUTEL_ACTIEF   = "magicActieveEigenaar";
 
-let meetings = [];            /* alle meetings (uit LocalStorage) */
-let huidigePeriode = "alles"; /* actief filter: alles/dag/week/maand */
-let gekozenKaart = null;      /* sleutelkaart die in het formulier is gekozen */
-let zoekTimer = null;         /* timer voor het vertragen van de Scryfall-zoekopdracht */
+let kaarten = [];
+let vrienden = [];
+let actieveEigenaar = "";
+let huidigePeriode = "alles";
+let huidigeRarity  = "alles";
+let huidigeSet     = "alles";
+let gekozenKaart = null;
+let zoekTimer = null;
 
-/* =======================================================
-   1. GEGEVENS LADEN EN BEWAREN (LocalStorage)
-   ======================================================= */
+const KLEUR_HEX = {
+  W: "#f4e8c4", U: "#3676b8", B: "#28221c",
+  R: "#ba3a2e", G: "#3a8048", C: "#c4bba6", M: "#d4af37"
+};
 
-function laadMeetings() {
-  const ruw = localStorage.getItem(OPSLAG_SLEUTEL);
+/* ===== 1. LocalStorage ===== */
+
+function laadGegevens() {
   try {
-    meetings = ruw ? JSON.parse(ruw) : [];
-  } catch (fout) {
-    console.error("Kon meetings niet lezen:", fout);
-    meetings = [];
-  }
+    const rk = localStorage.getItem(SLEUTEL_KAARTEN);
+    kaarten = rk ? JSON.parse(rk) : [];
+  } catch (e) { console.error("Kaarten lezen mislukt:", e); kaarten = []; }
+  try {
+    const rv = localStorage.getItem(SLEUTEL_VRIENDEN);
+    vrienden = rv ? JSON.parse(rv) : [];
+  } catch (e) { console.error("Vrienden lezen mislukt:", e); vrienden = []; }
+  if (vrienden.length === 0) vrienden = [t("ik")];
+  actieveEigenaar = localStorage.getItem(SLEUTEL_ACTIEF) || vrienden[0];
+  if (vrienden.indexOf(actieveEigenaar) === -1) actieveEigenaar = vrienden[0];
 }
+function bewaarKaarten()  { localStorage.setItem(SLEUTEL_KAARTEN,  JSON.stringify(kaarten)); }
+function bewaarVrienden() { localStorage.setItem(SLEUTEL_VRIENDEN, JSON.stringify(vrienden)); }
+function bewaarActief()   { localStorage.setItem(SLEUTEL_ACTIEF,   actieveEigenaar); }
 
-function bewaarMeetings() {
-  localStorage.setItem(OPSLAG_SLEUTEL, JSON.stringify(meetings));
-}
-
-/* =======================================================
-   2. SCHERMNAVIGATIE
-   ======================================================= */
+/* ===== 2. Schermnavigatie ===== */
 
 function toonScherm(naam) {
-  /* verberg alle schermen, toon het gekozen scherm */
-  document.querySelectorAll(".scherm").forEach(function (scherm) {
-    scherm.classList.add("verborgen");
-  });
+  document.querySelectorAll(".scherm").forEach(function (s) { s.classList.add("verborgen"); });
   document.getElementById("scherm-" + naam).classList.remove("verborgen");
-
-  /* markeer de juiste knop in de navigatiebalk */
-  document.querySelectorAll(".nav-knop").forEach(function (knop) {
-    knop.classList.toggle("actief", knop.dataset.scherm === naam);
+  document.querySelectorAll(".nav-knop").forEach(function (k) {
+    k.classList.toggle("actief", k.dataset.scherm === naam);
   });
-
-  /* het statistiekenscherm tekent zijn grafiek pas bij het openen */
-  if (naam === "statistieken") {
-    toonStatistieken();
-  }
+  if (naam === "statistieken") toonStatistieken();
+  if (naam === "vrienden")     toonVrienden();
   window.scrollTo(0, 0);
 }
 
-/* =======================================================
-   3. OVERZICHT TONEN EN FILTEREN
-   ======================================================= */
+/* ===== 3. Overzicht + filters ===== */
 
-/* binnenPeriode() - bepaalt of een datum binnen het filter valt */
 function binnenPeriode(datumTekst, periode) {
-  if (periode === "alles") {
-    return true;
-  }
-  const aantalDagen = { dag: 1, week: 7, maand: 31 }[periode];
-
-  const meetingDatum = new Date(datumTekst + "T00:00:00");
-  const vandaag = new Date();
-  vandaag.setHours(0, 0, 0, 0);
-
-  const ondergrens = new Date(vandaag);
-  ondergrens.setDate(ondergrens.getDate() - (aantalDagen - 1));
-
-  return meetingDatum >= ondergrens && meetingDatum <= vandaag;
+  if (periode === "alles") return true;
+  const dagen = { dag: 1, week: 7, maand: 31 }[periode];
+  const d = new Date(datumTekst + "T00:00:00");
+  const vandaag = new Date(); vandaag.setHours(0,0,0,0);
+  const grens = new Date(vandaag); grens.setDate(grens.getDate() - (dagen - 1));
+  return d >= grens && d <= vandaag;
 }
-
-/* filterMeetings() - geeft de meetings terug die in de periode vallen */
-function filterMeetings(periode) {
-  return meetings.filter(function (meeting) {
-    return binnenPeriode(meeting.datum, periode);
+function kaartenVanEigenaar(naam) {
+  return kaarten.filter(function (k) { return k.eigenaar === naam; });
+}
+function filterKaarten(eigenaar, periode) {
+  return kaartenVanEigenaar(eigenaar).filter(function (k) {
+    if (!binnenPeriode(k.datum, periode)) return false;
+    if (huidigeRarity !== "alles" && k.categorie !== huidigeRarity) return false;
+    if (huidigeSet    !== "alles" && k.set       !== huidigeSet)    return false;
+    return true;
   });
 }
 
-/* toonOverzicht() - vult het overzichtsscherm */
 function toonOverzicht() {
-  const zichtbaar = filterMeetings(huidigePeriode)
+  vulEigenaarDropdowns();
+  vulSetDropdown();
+  const zichtbaar = filterKaarten(actieveEigenaar, huidigePeriode)
     .sort(function (a, b) { return b.datum.localeCompare(a.datum); });
 
-  /* samenvatting bovenaan */
-  const gewonnen = totaalGewonnen(zichtbaar);
-  const gespeeld = totaalGespeeld(zichtbaar);
-  document.getElementById("statAantal").textContent = zichtbaar.length;
-  document.getElementById("statGewonnen").textContent = gewonnen;
-  document.getElementById("statWinrate").textContent = berekenWinrate(gewonnen, gespeeld) + "%";
+  document.getElementById("statAantal").textContent  = zichtbaar.length;
+  document.getElementById("statWaarde").textContent  = formatteerEuro(totaalWaarde(zichtbaar));
+  document.getElementById("statTopKleur").textContent = topKleurNaam(zichtbaar);
 
-  /* de lijst met meetings opbouwen */
-  const lijst = document.getElementById("meetingLijst");
+  const lijst = document.getElementById("kaartLijst");
   lijst.innerHTML = "";
-  zichtbaar.forEach(function (meeting) {
-    lijst.appendChild(maakMeetingElement(meeting));
-  });
+  zichtbaar.forEach(function (k) { lijst.appendChild(maakKaartElement(k)); });
 
-  /* melding tonen als er niets is */
   document.getElementById("leegMelding").style.display =
     zichtbaar.length === 0 ? "block" : "none";
 }
 
-/* maakMeetingElement() - bouwt een <li> die op een mini-kaart lijkt */
-function maakMeetingElement(meeting) {
+function maakKaartElement(kaart) {
   const li = document.createElement("li");
   li.className = "meeting-kaart";
-  li.style.borderLeftColor = randKleurVoor(meeting.kleuren);
+  li.style.borderLeftColor = randKleurVoor(kaart.kleuren);
 
-  /* afbeelding (of een nette plaatsvervanger) */
-  if (meeting.kaartAfbeelding) {
-    const afbeelding = document.createElement("img");
-    afbeelding.className = "meeting-art";
-    afbeelding.src = meeting.kaartAfbeelding;
-    afbeelding.alt = meeting.kaartNaam || "kaart";
-    afbeelding.loading = "lazy";
-    li.appendChild(afbeelding);
+  if (kaart.kaartAfbeelding) {
+    const img = document.createElement("img");
+    img.className = "meeting-art";
+    img.src = kaart.kaartAfbeelding;
+    img.alt = kaart.kaartNaam || "kaart";
+    img.loading = "lazy";
+    li.appendChild(img);
   } else {
     const leeg = document.createElement("div");
     leeg.className = "meeting-art";
@@ -140,169 +118,147 @@ function maakMeetingElement(meeting) {
     li.appendChild(leeg);
   }
 
-  /* tekstgedeelte */
   const info = document.createElement("div");
   info.className = "meeting-info";
 
   const naam = document.createElement("div");
   naam.className = "meeting-naam";
-  naam.textContent = meeting.kaartNaam || meeting.omschrijving || "Meeting";
+  naam.textContent = kaart.kaartNaam;
   info.appendChild(naam);
 
   const meta = document.createElement("div");
   meta.className = "meeting-meta";
-  meta.textContent = formatteerDatum(meeting.datum);
-  const format = document.createElement("span");
-  format.className = "meeting-format";
-  format.textContent = meeting.categorie;
-  meta.appendChild(document.createTextNode("  "));
-  meta.appendChild(format);
+  meta.textContent = formatteerDatum(kaart.datum) + "  ";
+  const rar = document.createElement("span");
+  rar.className = "rarity-badge rarity-" + (kaart.categorie || "common");
+  rar.textContent = t("rarity_" + (kaart.categorie || "common"));
+  meta.appendChild(rar);
   info.appendChild(meta);
 
-  if (meeting.omschrijving) {
-    const omschrijving = document.createElement("div");
-    omschrijving.className = "meeting-omschrijving";
-    omschrijving.textContent = meeting.omschrijving;
-    info.appendChild(omschrijving);
+  if (kaart.omschrijving) {
+    const om = document.createElement("div");
+    om.className = "meeting-omschrijving";
+    om.textContent = kaart.omschrijving;
+    info.appendChild(om);
   }
 
-  const resultaat = document.createElement("div");
-  resultaat.className = "meeting-resultaat";
-  resultaat.textContent =
-    meeting.gewonnen + " / " + meeting.gespeeld + " " + t("resultaat_gewonnen");
-  resultaat.style.color = randKleurVoor(meeting.kleuren);
-  info.appendChild(resultaat);
+  const waarde = document.createElement("div");
+  waarde.className = "meeting-resultaat";
+  waarde.textContent = formatteerEuro(kaart.waarde);
+  waarde.style.color = randKleurVoor(kaart.kleuren);
+  info.appendChild(waarde);
 
   li.appendChild(info);
 
-  /* verwijderknop */
   const verwijder = document.createElement("button");
   verwijder.className = "verwijder-knop";
   verwijder.type = "button";
-  verwijder.textContent = "×";
-  verwijder.setAttribute("aria-label", "Verwijder meeting");
-  verwijder.addEventListener("click", function () {
-    verwijderMeeting(meeting.id);
-  });
+  verwijder.textContent = "x";
+  verwijder.setAttribute("aria-label", "Verwijder kaart");
+  verwijder.addEventListener("click", function () { verwijderKaart(kaart.id); });
   li.appendChild(verwijder);
 
   return li;
 }
 
-/* verwijderMeeting() - haalt 1 meeting weg (onderdeel van CR.D) */
-function verwijderMeeting(id) {
-  meetings = meetings.filter(function (meeting) { return meeting.id !== id; });
-  bewaarMeetings();
+function verwijderKaart(id) {
+  kaarten = kaarten.filter(function (k) { return k.id !== id; });
+  bewaarKaarten();
   toonOverzicht();
 }
 
-/* =======================================================
-   4. REKENFUNCTIES (herbruikbaar)
-   ======================================================= */
+/* ===== 4. Rekenfuncties ===== */
 
-/* berekenWinrate() - zet gewonnen/gespeeld om naar een percentage (0-100) */
-function berekenWinrate(gewonnen, gespeeld) {
-  if (gespeeld <= 0) {
-    return 0;
-  }
-  return Math.round((gewonnen / gespeeld) * 100);
+function totaalWaarde(lijst) {
+  return lijst.reduce(function (s, k) { return s + Number(k.waarde || 0); }, 0);
 }
-
-/* totaalGewonnen() - telt alle gewonnen potjes in een lijst op */
-function totaalGewonnen(lijst) {
-  return lijst.reduce(function (som, meeting) {
-    return som + Number(meeting.gewonnen);
-  }, 0);
+function telPerKleur(lijst) {
+  const t = { W:0, U:0, B:0, R:0, G:0, C:0, M:0 };
+  lijst.forEach(function (k) { t[kleurBucket(k.kleuren)]++; });
+  return t;
 }
-
-/* totaalGespeeld() - telt alle gespeelde potjes in een lijst op */
-function totaalGespeeld(lijst) {
-  return lijst.reduce(function (som, meeting) {
-    return som + Number(meeting.gespeeld);
-  }, 0);
+function kleurBucket(kleuren) {
+  if (!kleuren || kleuren.length === 0) return "C";
+  if (kleuren.length > 1) return "M";
+  return kleuren[0];
 }
-
-/* randKleurVoor() - kiest een randkleur op basis van de manakleuren */
+function telPerRarity(lijst) {
+  const t = { common:0, uncommon:0, rare:0, mythic:0 };
+  lijst.forEach(function (k) {
+    const r = k.categorie || "common";
+    if (t[r] !== undefined) t[r]++;
+  });
+  return t;
+}
+function topKleurNaam(lijst) {
+  if (lijst.length === 0) return "-";
+  const tel = telPerKleur(lijst);
+  let beste = "C", hoog = -1;
+  Object.keys(tel).forEach(function (kl) {
+    if (tel[kl] > hoog) { hoog = tel[kl]; beste = kl; }
+  });
+  return t("kleur_" + beste);
+}
 function randKleurVoor(kleuren) {
-  const kaart = {
-    W: "#d9c75a", U: "#2a7ed0", B: "#4a4038", R: "#d3372a", G: "#2f8a3e"
-  };
-  if (!kleuren || kleuren.length === 0) {
-    return "#9a9284";          /* kleurloos */
-  }
-  if (kleuren.length > 1) {
-    return "#c8a14a";          /* meerkleurig = goud */
-  }
-  return kaart[kleuren[0]] || "#9a9284";
+  return KLEUR_HEX[kleurBucket(kleuren)];
+}
+function formatteerDatum(s) {
+  const d = s.split("-"); return d[2] + "-" + d[1] + "-" + d[0];
+}
+function formatteerEuro(b) {
+  return "€" + Number(b || 0).toFixed(2).replace(".", ",");
 }
 
-/* formatteerDatum() - "2026-05-18" -> "18-05-2026" */
-function formatteerDatum(datumTekst) {
-  const delen = datumTekst.split("-");
-  return delen[2] + "-" + delen[1] + "-" + delen[0];
-}
+/* ===== 5. Kaart toevoegen ===== */
 
-/* =======================================================
-   5. MEETING TOEVOEGEN (formulier + Scryfall)
-   ======================================================= */
-
-/* --- autocomplete: zoeken terwijl de gebruiker typt --- */
 function behandelKaartZoeken(event) {
-  const zoekterm = event.target.value;
-
-  /* wacht 300 ms na de laatste toetsaanslag (debounce) */
+  const z = event.target.value;
   clearTimeout(zoekTimer);
   zoekTimer = setTimeout(async function () {
     try {
-      const namen = await zoekKaartnamen(zoekterm);
-      toonSuggesties(namen);
-    } catch (fout) {
-      console.error("Zoeken mislukt:", fout);
-      toonSuggesties([]);     /* bij geen internet: geen suggesties */
-    }
+      const r = await zoekKaarten(z);
+      toonSuggesties(r);
+    } catch (e) { console.error("Zoeken mislukt:", e); toonSuggesties([]); }
   }, 300);
 }
 
-/* toonSuggesties() - vult het suggestielijstje onder het zoekveld */
-function toonSuggesties(namen) {
+function toonSuggesties(resultaten) {
   const lijst = document.getElementById("kaartSuggesties");
   lijst.innerHTML = "";
-
-  if (namen.length === 0) {
-    lijst.classList.remove("zichtbaar");
-    return;
-  }
-
-  namen.slice(0, 10).forEach(function (naam) {
+  if (resultaten.length === 0) { lijst.classList.remove("zichtbaar"); return; }
+  resultaten.forEach(function (kaart) {
     const li = document.createElement("li");
-    li.textContent = naam;
-    li.addEventListener("click", function () {
-      kiesKaart(naam);
-    });
+    if (kaart.thumb) {
+      const img = document.createElement("img");
+      img.className = "suggestie-thumb";
+      img.src = kaart.thumb; img.alt = ""; img.loading = "lazy";
+      li.appendChild(img);
+    }
+    const naam = document.createElement("span");
+    naam.className = "suggestie-naam"; naam.textContent = kaart.naam;
+    li.appendChild(naam);
+    li.addEventListener("click", function () { kiesKaart(kaart); });
     lijst.appendChild(li);
   });
   lijst.classList.add("zichtbaar");
 }
 
-/* kiesKaart() - haalt de gekozen kaart op en toont een voorbeeld */
-async function kiesKaart(naam) {
+function kiesKaart(kaart) {
   document.getElementById("kaartSuggesties").classList.remove("zichtbaar");
-  document.getElementById("invoerKaart").value = naam;
-
-  try {
-    gekozenKaart = await haalKaartOp(naam);
-    toonKaartPreview(gekozenKaart);
-  } catch (fout) {
-    console.error("Kaart ophalen mislukt:", fout);
-    gekozenKaart = null;
-  }
+  document.getElementById("invoerKaart").value = kaart.naam;
+  gekozenKaart = kaart;
+  toonKaartPreview(kaart);
 }
 
-/* toonKaartPreview() - laat de gekozen kaart zien in het formulier */
 function toonKaartPreview(kaart) {
   const preview = document.getElementById("kaartPreview");
-  document.getElementById("kaartPreviewImg").src = kaart.afbeelding;
+  document.getElementById("kaartPreviewImg").src = kaart.afbeelding || "";
   document.getElementById("kaartPreviewNaam").textContent = kaart.naam;
+  document.getElementById("kaartPreviewPrijs").textContent = formatteerEuro(kaart.prijs);
+
+  const rar = document.getElementById("kaartPreviewRarity");
+  rar.textContent = t("rarity_" + (kaart.rarity || "common"));
+  rar.className = "rarity-badge rarity-" + (kaart.rarity || "common");
 
   const kleurRij = document.getElementById("kaartPreviewKleuren");
   kleurRij.innerHTML = "";
@@ -311,7 +267,6 @@ function toonKaartPreview(kaart) {
   preview.classList.remove("verborgen");
 }
 
-/* maakManaRij() - bouwt gekleurde manabolletjes */
 function maakManaRij(kleuren) {
   const rij = document.createElement("span");
   rij.className = "mana-rij";
@@ -324,297 +279,343 @@ function maakManaRij(kleuren) {
   return rij;
 }
 
-/* behandelOpslaan() - verwerkt het versturen van het formulier */
 function behandelOpslaan(event) {
   event.preventDefault();
-  const melding = document.getElementById("formMelding");
-
+  const eigenaar = document.getElementById("invoerEigenaar").value;
   const datum = document.getElementById("invoerDatum").value;
-  const categorie = document.getElementById("invoerFormat").value;
   const omschrijving = document.getElementById("invoerOmschrijving").value.trim();
-  const gewonnen = Number(document.getElementById("invoerGewonnen").value);
-  const gespeeld = Number(document.getElementById("invoerGespeeld").value);
 
-  /* --- controles --- */
-  if (!datum) {
-    toonFormMelding(t("fout_datum"), "fout");
-    return;
-  }
-  if (gewonnen > gespeeld) {
-    toonFormMelding(t("fout_aantal"), "fout");
-    return;
-  }
+  if (!eigenaar) { toonFormMelding("formMelding", t("fout_eigenaar"), "fout"); return; }
+  if (!datum)    { toonFormMelding("formMelding", t("fout_datum"),    "fout"); return; }
+  if (!gekozenKaart) { toonFormMelding("formMelding", t("fout_kaart"), "fout"); return; }
 
-  /* --- nieuw meeting-object --- */
-  const nieuweMeeting = {
+  const nieuw = {
     id: Date.now(),
+    eigenaar: eigenaar,
     datum: datum,
-    categorie: categorie,
+    categorie: gekozenKaart.rarity || "common",
     omschrijving: omschrijving,
-    gewonnen: gewonnen,
-    gespeeld: gespeeld,
-    kaartNaam: gekozenKaart ? gekozenKaart.naam : "",
-    kaartAfbeelding: gekozenKaart ? gekozenKaart.afbeelding : "",
-    kleuren: gekozenKaart ? gekozenKaart.kleuren : []
+    waarde: Number(gekozenKaart.prijs || 0),
+    kaartNaam: gekozenKaart.naam,
+    kaartAfbeelding: gekozenKaart.afbeelding,
+    kleuren: gekozenKaart.kleuren || [],
+    set: gekozenKaart.set || "",
+    setNaam: gekozenKaart.setNaam || ""
   };
 
-  meetings.push(nieuweMeeting);
-  bewaarMeetings();
+  kaarten.push(nieuw);
+  bewaarKaarten();
+  actieveEigenaar = eigenaar;
+  bewaarActief();
 
-  /* formulier leegmaken en terug naar het overzicht */
   herstelFormulier();
-  toonFormMelding(t("opslaan_ok"), "ok");
+  toonFormMelding("formMelding", t("opslaan_ok"), "ok");
   toonOverzicht();
   toonScherm("overzicht");
 }
 
-/* toonFormMelding() - laat een melding zien onder het formulier */
-function toonFormMelding(tekst, soort) {
-  const melding = document.getElementById("formMelding");
-  melding.textContent = tekst;
-  melding.className = "form-melding " + soort;
+function toonFormMelding(id, tekst, soort) {
+  const m = document.getElementById(id);
+  m.textContent = tekst;
+  m.className = "form-melding " + soort;
 }
 
-/* herstelFormulier() - maakt het formulier weer leeg */
 function herstelFormulier() {
-  document.getElementById("meetingForm").reset();
+  document.getElementById("kaartForm").reset();
   document.getElementById("invoerDatum").value = vandaagTekst();
   document.getElementById("kaartPreview").classList.add("verborgen");
   document.getElementById("kaartSuggesties").classList.remove("zichtbaar");
   gekozenKaart = null;
+  vulEigenaarDropdowns();
 }
 
-/* =======================================================
-   6. STATISTIEKEN + GRAFIEK
-   ======================================================= */
+/* ===== 6. Vrienden + eigenaar-dropdowns ===== */
+
+function vulSetDropdown() {
+  const sel = document.getElementById("filterSet");
+  if (!sel) return;
+  const setKaart = {};
+  kaartenVanEigenaar(actieveEigenaar).forEach(function (k) {
+    if (k.set) setKaart[k.set] = k.setNaam || k.set;
+  });
+  const codes = Object.keys(setKaart).sort(function (a, b) {
+    return setKaart[a].localeCompare(setKaart[b]);
+  });
+  sel.innerHTML = "";
+  const eerste = document.createElement("option");
+  eerste.value = "alles";
+  eerste.textContent = t("filter_alle_sets");
+  sel.appendChild(eerste);
+  codes.forEach(function (code) {
+    const opt = document.createElement("option");
+    opt.value = code;
+    opt.textContent = setKaart[code];
+    sel.appendChild(opt);
+  });
+  if (huidigeSet !== "alles" && codes.indexOf(huidigeSet) === -1) huidigeSet = "alles";
+  sel.value = huidigeSet;
+}
+
+function vulEigenaarDropdowns() {
+  ["kiesEigenaar", "invoerEigenaar"].forEach(function (id) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = "";
+    vrienden.forEach(function (naam) {
+      const opt = document.createElement("option");
+      opt.value = naam; opt.textContent = naam;
+      if (naam === actieveEigenaar) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function toonVrienden() {
+  const lijst = document.getElementById("vriendenLijst");
+  lijst.innerHTML = "";
+  vrienden.forEach(function (naam) {
+    const aantal = kaartenVanEigenaar(naam).length;
+    const li = document.createElement("li");
+    li.className = "vriend-rij" + (naam === actieveEigenaar ? " actief" : "");
+
+    const naamEl = document.createElement("span");
+    naamEl.className = "vriend-naam"; naamEl.textContent = naam;
+    li.appendChild(naamEl);
+
+    const aantalEl = document.createElement("span");
+    aantalEl.className = "vriend-aantal";
+    aantalEl.textContent = aantal + " " + t("vrienden_kaarten");
+    li.appendChild(aantalEl);
+
+    const openKnop = document.createElement("button");
+    openKnop.className = "vriend-knop";
+    openKnop.type = "button";
+    openKnop.textContent = t("vrienden_open");
+    openKnop.addEventListener("click", function () { kiesActieveEigenaar(naam); });
+    li.appendChild(openKnop);
+
+    if (naam !== t("ik") && naam !== "Ik" && naam !== "Me") {
+      const verwijder = document.createElement("button");
+      verwijder.className = "vriend-verwijder";
+      verwijder.type = "button";
+      verwijder.textContent = "x";
+      verwijder.setAttribute("aria-label", "Verwijder vriend");
+      verwijder.addEventListener("click", function () { verwijderVriend(naam); });
+      li.appendChild(verwijder);
+    }
+    lijst.appendChild(li);
+  });
+}
+
+function behandelVriendToevoegen(event) {
+  event.preventDefault();
+  const veld = document.getElementById("invoerVriend");
+  const naam = veld.value.trim();
+  if (!naam) { toonFormMelding("vriendMelding", t("fout_naam_leeg"), "fout"); return; }
+  if (vrienden.indexOf(naam) !== -1) {
+    toonFormMelding("vriendMelding", t("fout_naam_bestaat"), "fout"); return;
+  }
+  vrienden.push(naam);
+  bewaarVrienden();
+  veld.value = "";
+  toonFormMelding("vriendMelding", "", "ok");
+  toonVrienden();
+  vulEigenaarDropdowns();
+}
+
+function verwijderVriend(naam) {
+  if (naam === t("ik") || naam === "Ik" || naam === "Me") {
+    toonFormMelding("vriendMelding", t("fout_ik_verwijderen"), "fout"); return;
+  }
+  if (!confirm(t("vrienden_verwijder_bevestig"))) return;
+  vrienden = vrienden.filter(function (v) { return v !== naam; });
+  kaarten  = kaarten.filter(function (k) { return k.eigenaar !== naam; });
+  if (actieveEigenaar === naam) actieveEigenaar = vrienden[0];
+  bewaarVrienden(); bewaarKaarten(); bewaarActief();
+  toonVrienden(); vulEigenaarDropdowns(); toonOverzicht();
+}
+
+function kiesActieveEigenaar(naam) {
+  actieveEigenaar = naam; bewaarActief();
+  vulEigenaarDropdowns(); toonOverzicht(); toonScherm("overzicht");
+}
+
+/* ===== 7. Statistieken ===== */
 
 function toonStatistieken() {
-  const gewonnen = totaalGewonnen(meetings);
-  const gespeeld = totaalGespeeld(meetings);
-
-  document.getElementById("statTotaal").textContent = meetings.length;
-  document.getElementById("statGemWinrate").textContent =
-    berekenWinrate(gewonnen, gespeeld) + "%";
-  document.getElementById("statBesteFormat").textContent = besteFormat();
-
-  tekenGrafiek(gewonnenPerMaand());
-  toonFormatVerdeling();
+  const lijst = kaartenVanEigenaar(actieveEigenaar);
+  document.getElementById("statsEigenaar").textContent = actieveEigenaar;
+  document.getElementById("statTotaal").textContent = lijst.length;
+  document.getElementById("statTotaalWaarde").textContent = formatteerEuro(totaalWaarde(lijst));
+  document.getElementById("statTopKleur2").textContent = topKleurNaam(lijst);
+  tekenKleurGrafiek(telPerKleur(lijst));
+  toonRarityVerdeling(telPerRarity(lijst));
 }
 
-/* gewonnenPerMaand() - aggregeert gewonnen potjes per maand (YYYY-MM) */
-function gewonnenPerMaand() {
-  const perMaand = {};
-  meetings.forEach(function (meeting) {
-    const maand = meeting.datum.slice(0, 7);   /* "2026-05" */
-    perMaand[maand] = (perMaand[maand] || 0) + Number(meeting.gewonnen);
-  });
-
-  /* omzetten naar een gesorteerde lijst, laatste 6 maanden */
-  return Object.keys(perMaand).sort().slice(-6).map(function (maand) {
-    return { maand: maand, waarde: perMaand[maand] };
-  });
-}
-
-/* tekenGrafiek() - tekent een staafdiagram op het canvas */
-function tekenGrafiek(gegevens) {
+function tekenKleurGrafiek(telling) {
   const canvas = document.getElementById("grafiek");
   const ctx = canvas.getContext("2d");
-  const breedte = canvas.width;
-  const hoogte = canvas.height;
-
-  ctx.clearRect(0, 0, breedte, hoogte);
-
-  /* geen gegevens? toon een tekst */
-  if (gegevens.length === 0) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const totaal = Object.keys(telling).reduce(function (s, k) { return s + telling[k]; }, 0);
+  if (totaal === 0) {
     ctx.fillStyle = "#6b5d48";
     ctx.font = "13px Segoe UI, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(t("grafiek_leeg"), breedte / 2, hoogte / 2);
+    ctx.fillText(t("grafiek_leeg"), W/2, H/2);
+    vulKleurLegenda(telling, totaal);
     return;
   }
-
-  const marge = 28;
-  const grondlijn = hoogte - marge;
-  const maxWaarde = Math.max.apply(null, gegevens.map(function (g) { return g.waarde; })) || 1;
-  const staafBreedte = (breedte - marge * 2) / gegevens.length;
-
-  gegevens.forEach(function (punt, index) {
-    const staafHoogte = (punt.waarde / maxWaarde) * (grondlijn - marge);
-    const x = marge + index * staafBreedte;
-    const y = grondlijn - staafHoogte;
-
-    /* staaf */
-    ctx.fillStyle = "#b8923d";
-    ctx.fillRect(x + 6, y, staafBreedte - 12, staafHoogte);
-
-    /* waarde boven de staaf */
-    ctx.fillStyle = "#2a2018";
-    ctx.font = "bold 12px Segoe UI, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(punt.waarde, x + staafBreedte / 2, y - 5);
-
-    /* maandlabel onder de staaf */
-    ctx.fillStyle = "#6b5d48";
-    ctx.font = "10px Segoe UI, sans-serif";
-    ctx.fillText(punt.maand.slice(5) + "/" + punt.maand.slice(2, 4),
-                 x + staafBreedte / 2, hoogte - 9);
+  const cx = W/2, cy = H/2, r = Math.min(cx, cy) - 12;
+  let hoek = -Math.PI/2;
+  Object.keys(telling).forEach(function (kl) {
+    if (telling[kl] === 0) return;
+    const eindHoek = hoek + (telling[kl] / totaal) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, hoek, eindHoek);
+    ctx.closePath();
+    ctx.fillStyle = KLEUR_HEX[kl]; ctx.fill();
+    ctx.strokeStyle = "#1c130a"; ctx.lineWidth = 2; ctx.stroke();
+    hoek = eindHoek;
   });
-
-  /* grondlijn */
-  ctx.strokeStyle = "#8a6d2c";
   ctx.beginPath();
-  ctx.moveTo(marge, grondlijn);
-  ctx.lineTo(breedte - marge, grondlijn);
-  ctx.stroke();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = "#8a6d2c"; ctx.lineWidth = 3; ctx.stroke();
+  vulKleurLegenda(telling, totaal);
 }
 
-/* besteFormat() - het format dat het vaakst voorkomt */
-function besteFormat() {
-  if (meetings.length === 0) {
-    return "–";
-  }
-  const telling = tellingPerFormat();
-  let beste = "";
-  let hoogste = -1;
-  Object.keys(telling).forEach(function (format) {
-    if (telling[format] > hoogste) {
-      hoogste = telling[format];
-      beste = format;
-    }
-  });
-  return beste;
-}
-
-/* tellingPerFormat() - hoe vaak elk format voorkomt */
-function tellingPerFormat() {
-  const telling = {};
-  meetings.forEach(function (meeting) {
-    telling[meeting.categorie] = (telling[meeting.categorie] || 0) + 1;
-  });
-  return telling;
-}
-
-/* toonFormatVerdeling() - balkjes per format */
-function toonFormatVerdeling() {
-  const houder = document.getElementById("formatVerdeling");
+function vulKleurLegenda(telling, totaal) {
+  const houder = document.getElementById("kleurLegenda");
   houder.innerHTML = "";
+  Object.keys(telling).forEach(function (kl) {
+    if (telling[kl] === 0) return;
+    const item = document.createElement("span");
+    item.className = "legenda-item";
+    const stip = document.createElement("span");
+    stip.className = "legenda-stip";
+    stip.style.background = KLEUR_HEX[kl];
+    item.appendChild(stip);
+    const tekst = document.createElement("span");
+    tekst.textContent = t("kleur_" + kl) + ": " + telling[kl];
+    item.appendChild(tekst);
+    houder.appendChild(item);
+  });
+}
 
-  const telling = tellingPerFormat();
-  const formats = Object.keys(telling);
-  if (formats.length === 0) {
-    return;
-  }
-  const maximum = Math.max.apply(null, formats.map(function (f) { return telling[f]; }));
-
-  formats.forEach(function (format) {
+function toonRarityVerdeling(telling) {
+  const houder = document.getElementById("rarityVerdeling");
+  houder.innerHTML = "";
+  const rs = ["common", "uncommon", "rare", "mythic"];
+  const max = Math.max.apply(null, rs.map(function (r) { return telling[r]; })) || 1;
+  rs.forEach(function (r) {
+    if (telling[r] === 0) return;
     const rij = document.createElement("div");
     rij.className = "format-balk-rij";
-
     const naam = document.createElement("span");
-    naam.className = "format-balk-naam";
-    naam.textContent = format;
-
+    naam.className = "format-balk-naam"; naam.textContent = t("rarity_" + r);
     const spoor = document.createElement("div");
     spoor.className = "format-balk-spoor";
     const vulling = document.createElement("div");
     vulling.className = "format-balk-vulling";
-    vulling.style.width = ((telling[format] / maximum) * 100) + "%";
+    vulling.style.width = ((telling[r] / max) * 100) + "%";
     spoor.appendChild(vulling);
-
     const aantal = document.createElement("span");
-    aantal.className = "format-balk-aantal";
-    aantal.textContent = telling[format];
-
-    rij.appendChild(naam);
-    rij.appendChild(spoor);
-    rij.appendChild(aantal);
+    aantal.className = "format-balk-aantal"; aantal.textContent = telling[r];
+    rij.appendChild(naam); rij.appendChild(spoor); rij.appendChild(aantal);
     houder.appendChild(rij);
   });
 }
 
-/* =======================================================
-   7. TAALSWITCH
-   ======================================================= */
+/* ===== 8. Taal, reset, opstart ===== */
 
 function wisselTaal(taal) {
-  pasTaalToe(taal);          /* uit i18n.js: vervangt de statische teksten */
-  toonOverzicht();           /* dynamische teksten opnieuw opbouwen */
-  if (!document.getElementById("scherm-statistieken").classList.contains("verborgen")) {
-    toonStatistieken();
-  }
+  pasTaalToe(taal);
+  vertaalIkInVrienden();
+  toonOverzicht();
+  if (!document.getElementById("scherm-statistieken").classList.contains("verborgen")) toonStatistieken();
+  if (!document.getElementById("scherm-vrienden").classList.contains("verborgen"))    toonVrienden();
 }
 
-/* =======================================================
-   8. HULPFUNCTIES, KOPPELINGEN EN OPSTART
-   ======================================================= */
+function vertaalIkInVrienden() {
+  const oude = ["Ik", "Me"];
+  const nieuw = t("ik");
+  vrienden = vrienden.map(function (v) { return oude.indexOf(v) !== -1 ? nieuw : v; });
+  kaarten.forEach(function (k) { if (oude.indexOf(k.eigenaar) !== -1) k.eigenaar = nieuw; });
+  if (oude.indexOf(actieveEigenaar) !== -1) actieveEigenaar = nieuw;
+  bewaarVrienden(); bewaarKaarten(); bewaarActief();
+}
 
-/* vandaagTekst() - datum van vandaag als "JJJJ-MM-DD" */
 function vandaagTekst() {
   const nu = new Date();
   nu.setMinutes(nu.getMinutes() - nu.getTimezoneOffset());
   return nu.toISOString().slice(0, 10);
 }
 
-/* koppelGebeurtenissen() - zet alle event listeners klaar */
 function koppelGebeurtenissen() {
-  /* navigatiebalk */
   document.querySelectorAll(".nav-knop").forEach(function (knop) {
-    knop.addEventListener("click", function () {
-      toonScherm(knop.dataset.scherm);
-    });
+    knop.addEventListener("click", function () { toonScherm(knop.dataset.scherm); });
   });
 
-  /* filterknoppen op het overzicht */
   document.querySelectorAll(".filter-knop").forEach(function (knop) {
     knop.addEventListener("click", function () {
-      document.querySelectorAll(".filter-knop").forEach(function (k) {
-        k.classList.remove("actief");
-      });
+      document.querySelectorAll(".filter-knop").forEach(function (k) { k.classList.remove("actief"); });
       knop.classList.add("actief");
       huidigePeriode = knop.dataset.periode;
       toonOverzicht();
     });
   });
 
-  /* formulier */
-  document.getElementById("invoerKaart").addEventListener("input", behandelKaartZoeken);
-  document.getElementById("meetingForm").addEventListener("submit", behandelOpslaan);
+  document.getElementById("kiesEigenaar").addEventListener("change", function (e) {
+    actieveEigenaar = e.target.value;
+    bewaarActief();
+    huidigeSet = "alles";
+    document.getElementById("filterRarity").value = "alles";
+    huidigeRarity = "alles";
+    toonOverzicht();
+  });
 
-  /* taalknop in de kopbalk wisselt tussen NL en EN */
+  document.getElementById("filterRarity").addEventListener("change", function (e) {
+    huidigeRarity = e.target.value; toonOverzicht();
+  });
+  document.getElementById("filterSet").addEventListener("change", function (e) {
+    huidigeSet = e.target.value; toonOverzicht();
+  });
+
+  document.getElementById("invoerKaart").addEventListener("input", behandelKaartZoeken);
+  document.getElementById("kaartForm").addEventListener("submit", behandelOpslaan);
+  document.getElementById("vriendForm").addEventListener("submit", behandelVriendToevoegen);
+
   document.getElementById("taalKnop").addEventListener("click", function () {
     wisselTaal(huidigeTaal === "nl" ? "en" : "nl");
   });
-
-  /* taalknoppen op het scherm "Over" */
   document.querySelectorAll(".taal-optie").forEach(function (knop) {
-    knop.addEventListener("click", function () {
-      wisselTaal(knop.dataset.taal);
-    });
+    knop.addEventListener("click", function () { wisselTaal(knop.dataset.taal); });
   });
 
-  /* resetknop */
   document.getElementById("resetKnop").addEventListener("click", function () {
-    if (confirm(t("reset_bevestig"))) {
-      meetings = [];
-      bewaarMeetings();
-      toonOverzicht();
-      toonStatistieken();
-    }
+    if (!confirm(t("reset_bevestig"))) return;
+    kaarten = [];
+    vrienden = [t("ik")];
+    actieveEigenaar = vrienden[0];
+    bewaarKaarten(); bewaarVrienden(); bewaarActief();
+    toonOverzicht();
+    if (!document.getElementById("scherm-statistieken").classList.contains("verborgen")) toonStatistieken();
+    if (!document.getElementById("scherm-vrienden").classList.contains("verborgen"))    toonVrienden();
   });
 }
 
-/* start() - wordt uitgevoerd zodra de pagina geladen is */
 function start() {
-  laadMeetings();
-  pasTaalToe(huidigeTaal);                 /* taal toepassen (uit i18n.js) */
+  pasTaalToe(huidigeTaal);
+  laadGegevens();
+  vulEigenaarDropdowns();
   document.getElementById("invoerDatum").value = vandaagTekst();
   koppelGebeurtenissen();
   toonOverzicht();
 
-  /* service worker registreren (voor de offline-PWA) */
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").catch(function (fout) {
-      console.warn("Service worker niet geregistreerd:", fout);
+    navigator.serviceWorker.register("service-worker.js").catch(function (e) {
+      console.warn("Service worker niet geregistreerd:", e);
     });
   }
 }
