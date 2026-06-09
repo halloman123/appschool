@@ -162,6 +162,7 @@ function maakKaartElement(kaart) {
 }
 
 function verwijderKaart(id) {
+  if (!confirm(t("kaart_verwijder_bevestig"))) return;
   kaarten = kaarten.filter(function (k) { return k.id !== id; });
   bewaarKaarten();
   toonOverzicht();
@@ -619,5 +620,7 @@ function start() {
     });
   }
 }
+
+document.addEventListener("DOMContentLoaded", start);
 
 document.addEventListener("DOMContentLoaded", start);
