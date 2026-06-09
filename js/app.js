@@ -176,7 +176,20 @@ function bevestigPopup(tekst) {
     const ja   = document.getElementById("popupJa");
     const nee  = document.getElementById("popupNee");
     document.getElementById("popupTekst").textContent = tekst;
+    /* alle positionering hardcoded via inline-stijl, zodat het ook
+       werkt als de browser nog een oude versie van de CSS gecached heeft */
+    laag.style.position = "fixed";
+    laag.style.top = "0";
+    laag.style.left = "0";
+    laag.style.width = "100vw";
+    laag.style.height = "100vh";
+    laag.style.background = "rgba(28, 19, 10, 0.72)";
     laag.style.display = "flex";
+    laag.style.alignItems = "center";
+    laag.style.justifyContent = "center";
+    laag.style.padding = "20px";
+    laag.style.boxSizing = "border-box";
+    laag.style.zIndex = "100000";
     laag.classList.remove("verborgen");
 
     function sluit(antwoord) {
@@ -656,6 +669,26 @@ function start() {
 
 document.addEventListener("DOMContentLoaded", start);
    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", start);
+ElementById("scherm-vrienden").classList.contains("verborgen"))    toonVrienden();
+  });
+}
+
+function start() {
+  pasTaalToe(huidigeTaal);
+  laadGegevens();
+  vulEigenaarDropdowns();
+  document.getElementById("invoerDatum").value = vandaagTekst();
+  koppelGebeurtenissen();
+  toonOverzicht();
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js").catch(function (e) {
+      console.warn("Service worker niet geregistreerd:", e);
+    });
   }
 }
 
