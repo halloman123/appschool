@@ -169,48 +169,74 @@ async function verwijderKaart(id) {
 }
 
 /* bevestigPopup() - eigen modal in plaats van browser-confirm.
-   Geeft een Promise terug die true (Ja) of false (Annuleer) levert. */
+   Bouwt de modal volledig op met JavaScript en verwijdert hem weer
+   bij sluiten. Zo kan er nooit een "vastzittende" modal in de DOM
+   blijven hangen, ook niet bij een stevige cache. */
 function bevestigPopup(tekst) {
   return new Promise(function (resolve) {
-    const laag = document.getElementById("bevestigModal");
-    const ja   = document.getElementById("popupJa");
-    const nee  = document.getElementById("popupNee");
-    document.getElementById("popupTekst").textContent = tekst;
-    /* alle positionering hardcoded via inline-stijl, zodat het ook
-       werkt als de browser nog een oude versie van de CSS gecached heeft */
-    laag.style.position = "fixed";
-    laag.style.top = "0";
-    laag.style.left = "0";
-    laag.style.width = "100vw";
-    laag.style.height = "100vh";
-    laag.style.background = "rgba(28, 19, 10, 0.72)";
-    laag.style.display = "flex";
-    laag.style.alignItems = "center";
-    laag.style.justifyContent = "center";
-    laag.style.padding = "20px";
-    laag.style.boxSizing = "border-box";
-    laag.style.zIndex = "100000";
-    laag.classList.remove("verborgen");
+    const laag = document.createElement("div");
+    Object.assign(laag.style, {
+      position: "fixed", top: "0", left: "0",
+      width: "100vw", height: "100vh",
+      background: "rgba(28,19,10,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px", boxSizing: "border-box", zIndex: "100000"
+    });
+
+    const doos = document.createElement("div");
+    Object.assign(doos.style, {
+      background: "#ece0c8",
+      border: "3px solid #2e2013", borderRadius: "14px",
+      boxShadow: "0 0 0 4px #78592e, 0 12px 30px rgba(0,0,0,.5)",
+      padding: "22px 22px 18px", maxWidth: "360px", width: "100%",
+      fontFamily: "'Segoe UI', Roboto, system-ui, sans-serif"
+    });
+
+    const p = document.createElement("p");
+    p.textContent = tekst;
+    Object.assign(p.style, {
+      fontSize: "1rem", color: "#2e2013",
+      marginBottom: "18px", lineHeight: "1.45", margin: "0 0 18px"
+    });
+
+    const knoppen = document.createElement("div");
+    Object.assign(knoppen.style, { display: "flex", gap: "10px" });
+
+    function maakKnop(label, kleurAchtergrond, kleurTekst, kleurRand) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label;
+      Object.assign(b.style, {
+        flex: "1", padding: "11px 10px",
+        fontWeight: "800", fontSize: ".92rem",
+        borderRadius: "8px", cursor: "pointer",
+        background: kleurAchtergrond, color: kleurTekst,
+        border: "2px solid " + kleurRand, fontFamily: "inherit"
+      });
+      return b;
+    }
+    const nee = maakKnop(t("popup_annuleer"), "#f6efdd", "#2e2013", "#78592e");
+    const ja  = maakKnop(t("popup_ok"),       "#ba3a2e", "#fff",    "#1c130a");
+
+    knoppen.appendChild(nee); knoppen.appendChild(ja);
+    doos.appendChild(p); doos.appendChild(knoppen);
+    laag.appendChild(doos);
+    document.body.appendChild(laag);
+    ja.focus();
 
     function sluit(antwoord) {
-      laag.style.display = "none";
-      laag.classList.add("verborgen");
-      ja.removeEventListener("click", jaH);
-      nee.removeEventListener("click", neeH);
-      laag.removeEventListener("click", buitenH);
+      laag.remove();
       document.removeEventListener("keydown", escH);
       resolve(antwoord);
     }
-    function jaH()  { sluit(true);  }
-    function neeH() { sluit(false); }
-    function escH(e){ if (e.key === "Escape") sluit(false); }
+    function jaH()    { sluit(true);  }
+    function neeH()   { sluit(false); }
+    function escH(e)  { if (e.key === "Escape") sluit(false); }
     function buitenH(e){ if (e.target === laag) sluit(false); }
 
     ja.addEventListener("click", jaH);
     nee.addEventListener("click", neeH);
     laag.addEventListener("click", buitenH);
     document.addEventListener("keydown", escH);
-    ja.focus();
   });
 }
 
@@ -674,6 +700,34 @@ document.addEventListener("DOMContentLoaded", start);
 
 document.addEventListener("DOMContentLoaded", start);
 ElementById("scherm-vrienden").classList.contains("verborgen"))    toonVrienden();
+  });
+}
+
+function start() {
+  pasTaalToe(huidigeTaal);
+  laadGegevens();
+  vulEigenaarDropdowns();
+  document.getElementById("invoerDatum").value = vandaagTekst();
+  koppelGebeurtenissen();
+  toonOverzicht();
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js").catch(function (e) {
+      console.warn("Service worker niet geregistreerd:", e);
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", start);
+  document.getElementById("resetKnop").addEventListener("click", async function () {
+    if (!await bevestigPopup(t("reset_bevestig"))) return;
+    kaarten = [];
+    vrienden = [t("ik")];
+    actieveEigenaar = vrienden[0];
+    bewaarKaarten(); bewaarVrienden(); bewaarActief();
+    toonOverzicht();
+    if (!document.getElementById("scherm-statistieken").classList.contains("verborgen")) toonStatistieken();
+    if (!document.getElementById("scherm-vrienden").classList.contains("verborgen"))    toonVrienden();
   });
 }
 
