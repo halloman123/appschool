@@ -767,3 +767,14 @@ function start() {
   pasTaalToe(huidigeTaal);
   laadGegevens();
   vulEigenaarDropdowns();
+  document.getElementById("invoerDatum").value = vandaagTekst();
+  koppelGebeurtenissen();
+  toonOverzicht();
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js").catch(function (e) {
+      console.warn("Service worker niet geregistreerd:", e);
+    });
+  }
+}
+document.addEventListener("DOMContentLoaded", start);

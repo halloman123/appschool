@@ -210,3 +210,6 @@ function pasTaalToe(taal) {
   if (taalKnop) taalKnop.textContent = huidigeTaal.toUpperCase();
 
   document.querySelectorAll(".taal-optie").forEach(function (knop) {
+    knop.classList.toggle("actief", knop.dataset.taal === huidigeTaal);
+  });
+}
