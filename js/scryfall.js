@@ -8,10 +8,12 @@ async function zoekKaarten(zoekterm) {
   if (!zoekterm || zoekterm.trim().length < 2) {
     return [];
   }
-  /* "-is:promo" filtert promo-kaarten uit.
-     "unique=prints" geeft een aparte regel per pak waarin de kaart zit. */
+  /* Filters in de zoekopdracht:
+     - "-is:promo"   : geen promotionele versies
+     - "-is:digital" : geen Arena-exclusieve / Alchemy-versies
+                       (die hebben geen euro-prijs en zijn niet op papier) */
   const url = SCRYFALL_BASIS + "/cards/search?q=" +
-              encodeURIComponent(zoekterm + " -is:promo") +
+              encodeURIComponent(zoekterm + " -is:promo -is:digital") +
               "&order=name&unique=prints";
   const reactie = await fetch(url);
   if (reactie.status === 404) return [];
