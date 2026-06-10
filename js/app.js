@@ -82,7 +82,7 @@ function toonOverzicht() {
   const zichtbaar = filterKaarten(actieveEigenaar, huidigePeriode)
     .sort(function (a, b) { return b.datum.localeCompare(a.datum); });
 
-  document.getElementById("statAantal").textContent  = zichtbaar.length;
+  document.getElementById("statAantal").textContent  = totaalAantal(zichtbaar);
   document.getElementById("statWaarde").textContent  = formatteerEuro(totaalWaarde(zichtbaar));
   document.getElementById("statTopKleur").textContent = topKleurNaam(zichtbaar);
 
@@ -142,9 +142,18 @@ function maakKaartElement(kaart) {
     info.appendChild(om);
   }
 
+  const aantalPerKaart = Number(kaart.aantal || 1);
+  if (aantalPerKaart > 1) {
+    const aantalEl = document.createElement("span");
+    aantalEl.className = "meeting-format";
+    aantalEl.style.marginLeft = "6px";
+    aantalEl.textContent = "x" + aantalPerKaart;
+    meta.appendChild(aantalEl);
+  }
+
   const waarde = document.createElement("div");
   waarde.className = "meeting-resultaat";
-  waarde.textContent = formatteerEuro(kaart.waarde);
+  waarde.textContent = formatteerEuro(Number(kaart.waarde || 0) * aantalPerKaart);
   waarde.style.color = randKleurVoor(kaart.kleuren);
   info.appendChild(waarde);
 
@@ -242,12 +251,21 @@ function bevestigPopup(tekst) {
 
 /* ===== 4. Rekenfuncties ===== */
 
+/* totaalWaarde() - som van prijs * aantal voor elke kaart */
 function totaalWaarde(lijst) {
-  return lijst.reduce(function (s, k) { return s + Number(k.waarde || 0); }, 0);
+  return lijst.reduce(function (s, k) {
+    return s + Number(k.waarde || 0) * Number(k.aantal || 1);
+  }, 0);
+}
+/* totaalAantal() - som van aantal voor elke kaart in de lijst */
+function totaalAantal(lijst) {
+  return lijst.reduce(function (s, k) { return s + Number(k.aantal || 1); }, 0);
 }
 function telPerKleur(lijst) {
   const t = { W:0, U:0, B:0, R:0, G:0, C:0, M:0 };
-  lijst.forEach(function (k) { t[kleurBucket(k.kleuren)]++; });
+  lijst.forEach(function (k) {
+    t[kleurBucket(k.kleuren)] += Number(k.aantal || 1);
+  });
   return t;
 }
 function kleurBucket(kleuren) {
@@ -259,7 +277,7 @@ function telPerRarity(lijst) {
   const t = { common:0, uncommon:0, rare:0, mythic:0 };
   lijst.forEach(function (k) {
     const r = k.categorie || "common";
-    if (t[r] !== undefined) t[r]++;
+    if (t[r] !== undefined) t[r] += Number(k.aantal || 1);
   });
   return t;
 }
@@ -307,9 +325,17 @@ function toonSuggesties(resultaten) {
       img.src = kaart.thumb; img.alt = ""; img.loading = "lazy";
       li.appendChild(img);
     }
-    const naam = document.createElement("span");
+    const tekstWrap = document.createElement("div");
+    tekstWrap.className = "suggestie-tekst";
+    const naam = document.createElement("div");
     naam.className = "suggestie-naam"; naam.textContent = kaart.naam;
-    li.appendChild(naam);
+    tekstWrap.appendChild(naam);
+    if (kaart.setNaam) {
+      const setEl = document.createElement("div");
+      setEl.className = "suggestie-set"; setEl.textContent = kaart.setNaam;
+      tekstWrap.appendChild(setEl);
+    }
+    li.appendChild(tekstWrap);
     li.addEventListener("click", function () { kiesKaart(kaart); });
     lijst.appendChild(li);
   });
@@ -357,10 +383,12 @@ function behandelOpslaan(event) {
   const eigenaar = document.getElementById("invoerEigenaar").value;
   const datum = document.getElementById("invoerDatum").value;
   const omschrijving = document.getElementById("invoerOmschrijving").value.trim();
+  const aantal = Math.max(1, parseInt(document.getElementById("invoerAantal").value, 10) || 1);
 
   if (!eigenaar) { toonFormMelding("formMelding", t("fout_eigenaar"), "fout"); return; }
   if (!datum)    { toonFormMelding("formMelding", t("fout_datum"),    "fout"); return; }
   if (!gekozenKaart) { toonFormMelding("formMelding", t("fout_kaart"), "fout"); return; }
+  if (aantal < 1) { toonFormMelding("formMelding", t("fout_aantal"), "fout"); return; }
 
   const nieuw = {
     id: Date.now(),
@@ -369,6 +397,7 @@ function behandelOpslaan(event) {
     categorie: gekozenKaart.rarity || "common",
     omschrijving: omschrijving,
     waarde: Number(gekozenKaart.prijs || 0),
+    aantal: aantal,
     kaartNaam: gekozenKaart.naam,
     kaartAfbeelding: gekozenKaart.afbeelding,
     kleuren: gekozenKaart.kleuren || [],
@@ -447,7 +476,7 @@ function toonVrienden() {
   const lijst = document.getElementById("vriendenLijst");
   lijst.innerHTML = "";
   vrienden.forEach(function (naam) {
-    const aantal = kaartenVanEigenaar(naam).length;
+    const aantal = totaalAantal(kaartenVanEigenaar(naam));
     const li = document.createElement("li");
     li.className = "vriend-rij" + (naam === actieveEigenaar ? " actief" : "");
 
@@ -574,7 +603,7 @@ function kiesActieveEigenaar(naam) {
 function toonStatistieken() {
   const lijst = kaartenVanEigenaar(actieveEigenaar);
   document.getElementById("statsEigenaar").textContent = actieveEigenaar;
-  document.getElementById("statTotaal").textContent = lijst.length;
+  document.getElementById("statTotaal").textContent = totaalAantal(lijst);
   document.getElementById("statTotaalWaarde").textContent = formatteerEuro(totaalWaarde(lijst));
   document.getElementById("statTopKleur2").textContent = topKleurNaam(lijst);
   tekenKleurGrafiek(telPerKleur(lijst));
@@ -738,15 +767,3 @@ function start() {
   pasTaalToe(huidigeTaal);
   laadGegevens();
   vulEigenaarDropdowns();
-  document.getElementById("invoerDatum").value = vandaagTekst();
-  koppelGebeurtenissen();
-  toonOverzicht();
-
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").catch(function (e) {
-      console.warn("Service worker niet geregistreerd:", e);
-    });
-  }
-}
-
-document.addEventListener("DOMContentLoaded", start);

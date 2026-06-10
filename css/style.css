@@ -339,7 +339,16 @@ main {
   background: var(--oval);
 }
 
-.suggestie-naam { line-height: 1.2; }
+.suggestie-tekst { flex: 1; min-width: 0; }
+.suggestie-naam  { line-height: 1.2; font-weight: 600; }
+.suggestie-set   {
+  font-size: .72rem;
+  color: var(--tekst-zacht);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .kaart-preview {
   display: flex;

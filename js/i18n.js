@@ -33,8 +33,10 @@ const VERTALINGEN = {
     label_omschrijving: "Notitie",
     ph_kaart: "Typ een kaartnaam...",
     ph_omschrijving: "Bijvoorbeeld: gekregen op verjaardag",
+    label_aantal: "Aantal",
     knop_opslaan: "Kaart opslaan",
     fout_datum: "Kies een datum.",
+    fout_aantal: "Aantal moet minstens 1 zijn.",
     fout_kaart: "Kies een kaart uit de zoekresultaten.",
     fout_eigenaar: "Kies een vriend (eigenaar).",
     opslaan_ok: "Kaart opgeslagen!",
@@ -121,8 +123,10 @@ const VERTALINGEN = {
     label_omschrijving: "Note",
     ph_kaart: "Type a card name...",
     ph_omschrijving: "For example: got it for my birthday",
+    label_aantal: "Quantity",
     knop_opslaan: "Save card",
     fout_datum: "Please choose a date.",
+    fout_aantal: "Quantity must be at least 1.",
     fout_kaart: "Please pick a card from the search results.",
     fout_eigenaar: "Please choose a friend (owner).",
     opslaan_ok: "Card saved!",
@@ -206,6 +210,3 @@ function pasTaalToe(taal) {
   if (taalKnop) taalKnop.textContent = huidigeTaal.toUpperCase();
 
   document.querySelectorAll(".taal-optie").forEach(function (knop) {
-    knop.classList.toggle("actief", knop.dataset.taal === huidigeTaal);
-  });
-}

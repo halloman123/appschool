@@ -18,9 +18,12 @@ async function zoekKaarten(zoekterm) {
   if (!zoekterm || zoekterm.trim().length < 2) {
     return [];
   }
+  /* "-is:promo" sluit promo-versies uit.
+     "unique=prints" geeft een aparte regel per pak waar de kaart in zit,
+     zodat je dezelfde kaart uit verschillende sets kunt kiezen. */
   const url = SCRYFALL_BASIS + "/cards/search?q=" +
-              encodeURIComponent(zoekterm) +
-              "&order=name&unique=cards";
+              encodeURIComponent(zoekterm + " -is:promo") +
+              "&order=name&unique=prints";
   const reactie = await fetch(url);
   if (reactie.status === 404) {
     return [];
