@@ -480,7 +480,7 @@ function toonVrienden() {
   });
 }
 
-function behandelVriendToevoegen(event) {
+async function behandelVriendToevoegen(event) {
   event.preventDefault();
   const veld = document.getElementById("invoerVriend");
   const naam = veld.value.trim();
@@ -488,12 +488,68 @@ function behandelVriendToevoegen(event) {
   if (vrienden.indexOf(naam) !== -1) {
     toonFormMelding("vriendMelding", t("fout_naam_bestaat"), "fout"); return;
   }
+  /* grapje: bij de tweede vriend (eerste extra na "Ik") tonen we een nep-rekening */
+  if (vrienden.length === 1) {
+    await infoPopup(t("grap_tweede_vriend"));
+  }
   vrienden.push(naam);
   bewaarVrienden();
   veld.value = "";
   toonFormMelding("vriendMelding", "", "ok");
   toonVrienden();
   vulEigenaarDropdowns();
+}
+
+/* infoPopup() - informatieve modal met een enkele OK-knop.
+   Klik op de knop, achtergrond of Esc om hem te sluiten. */
+function infoPopup(tekst) {
+  return new Promise(function (resolve) {
+    const laag = document.createElement("div");
+    Object.assign(laag.style, {
+      position: "fixed", top: "0", left: "0",
+      width: "100vw", height: "100vh",
+      background: "rgba(28,19,10,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px", boxSizing: "border-box", zIndex: "100000"
+    });
+    const doos = document.createElement("div");
+    Object.assign(doos.style, {
+      background: "#ece0c8",
+      border: "3px solid #2e2013", borderRadius: "14px",
+      boxShadow: "0 0 0 4px #78592e, 0 12px 30px rgba(0,0,0,.5)",
+      padding: "22px 22px 18px", maxWidth: "360px", width: "100%",
+      fontFamily: "'Segoe UI', Roboto, system-ui, sans-serif"
+    });
+    const p = document.createElement("p");
+    p.textContent = tekst;
+    Object.assign(p.style, {
+      fontSize: "1rem", color: "#2e2013",
+      lineHeight: "1.45", margin: "0 0 18px"
+    });
+    const knop = document.createElement("button");
+    knop.type = "button";
+    knop.textContent = t("popup_oke");
+    Object.assign(knop.style, {
+      width: "100%", padding: "11px 10px",
+      fontWeight: "800", fontSize: ".92rem",
+      borderRadius: "8px", cursor: "pointer",
+      background: "#c8a14a", color: "#1c130a",
+      border: "2px solid #1c130a", fontFamily: "inherit"
+    });
+    doos.appendChild(p); doos.appendChild(knop);
+    laag.appendChild(doos);
+    document.body.appendChild(laag);
+    function sluit() {
+      laag.remove();
+      document.removeEventListener("keydown", escH);
+      resolve();
+    }
+    function escH(e) { if (e.key === "Escape") sluit(); }
+    knop.addEventListener("click", sluit);
+    laag.addEventListener("click", function (e) { if (e.target === laag) sluit(); });
+    document.addEventListener("keydown", escH);
+    knop.focus();
+  });
 }
 
 async function verwijderVriend(naam) {
