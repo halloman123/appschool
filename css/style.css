@@ -291,6 +291,8 @@ main {
 .veld select,
 .veld textarea {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 9px 11px;
   font-size: .92rem;
   font-family: inherit;
@@ -298,6 +300,15 @@ main {
   color: var(--tekst);
   border: 2px solid var(--goud-donker);
   border-radius: 6px;
+}
+
+/* iOS Safari geeft date- en number-inputs een afwijkende breedte;
+   met -webkit-appearance: none gedragen ze zich als gewone inputs */
+.veld input[type="date"],
+.veld input[type="number"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
 }
 .veld input:focus,
 .veld select:focus,
